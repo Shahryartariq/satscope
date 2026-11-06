@@ -1,0 +1,7 @@
+{
+  "name": "empty-module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder for packages that @omnisat/lasereyes-core lists as dependencies but already ships inside its own bundle (one of them is an unpinned git dependency). Replacing them keeps installs fast and reproducible.",
+  "main": "index.js"
+}
