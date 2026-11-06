@@ -112,14 +112,22 @@ export function ReportView({ report }: { report: Report }) {
                 <dt>Inscriptions</dt>
                 <dd>
                   {report.indexed || totals.inscriptions ? totals.inscriptions.toLocaleString("en-US") : "Not checked"}
-                  <small>{inscribed.length ? formatCount(inscribed.length, "coin") : "none found"}</small>
+                  <small>
+                    {inscribed.length
+                      ? formatCount(inscribed.length, "coin")
+                      : report.indexed
+                        ? "none found"
+                        : "index unavailable"}
+                  </small>
                 </dd>
               </div>
               <div className="total">
                 <dt>Runes</dt>
                 <dd>
                   {report.indexed || totals.runeKinds ? totals.runeKinds.toLocaleString("en-US") : "Not checked"}
-                  <small>{totals.runeKinds ? "different tokens" : "none found"}</small>
+                  <small>
+                    {totals.runeKinds ? "different tokens" : report.indexed ? "none found" : "index unavailable"}
+                  </small>
                 </dd>
               </div>
             </dl>
@@ -146,7 +154,7 @@ export function ReportView({ report }: { report: Report }) {
                 </span>
                 <span>
                   <span className="kind-dot kd-inscribed" aria-hidden="true" />
-                  Holding inscriptions or Runes {formatBtc(totals.protectedSats)}
+                  {report.indexed ? "Holding inscriptions or Runes" : "Check first"} {formatBtc(totals.protectedSats)}
                 </span>
               </p>
             </div>
