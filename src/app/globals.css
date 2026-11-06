@@ -9,20 +9,20 @@
   --panel-2: #f6f8fb;
   --ink: #18202b;
   --ink-2: #4a5566;
-  --ink-3: #6b7686;
+  --ink-3: #596474;
   --line: #d5dbe3;
   --line-strong: #b9c2ce;
   --orange: #e8700f;
   --orange-ink: #b4520a;
   --violet: #6a4fe0;
   --rune: #c23a7c;
-  --green: #1e8f62;
-  --ochre: #a77700;
-  --slate: #7e8999;
-  --sev-high: #d4510b;
-  --sev-medium: #a77700;
+  --green: #17784f;
+  --ochre: #8a6200;
+  --slate: #6f7a8a;
+  --sev-high: #b8440a;
+  --sev-medium: #8a6200;
   --sev-low: #4a5566;
-  --sev-info: #7e8999;
+  --sev-info: #596474;
   --shadow: 0 1px 0 rgba(24, 32, 43, 0.04), 0 8px 24px -12px rgba(24, 32, 43, 0.18);
 
   --font-body: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
@@ -1667,4 +1667,32 @@ fieldset {
 
 .prose .steps p {
   margin-top: 4px;
+}
+
+.chip {
+  font-family: var(--font-body);
+}
+
+.verify-result > :first-child,
+.panel > :first-child {
+  margin-top: 0;
+}
+
+.steps > li.current h2,
+.steps > li.done h2 {
+  color: var(--ink);
+}
+
+@media (max-width: 860px) {
+  .score {
+    grid-template-columns: 112px 1fr;
+    justify-items: start;
+    align-items: center;
+    text-align: left;
+    gap: 18px;
+  }
+  .score svg {
+    width: 112px;
+    height: 112px;
+  }
 }

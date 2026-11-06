@@ -50,7 +50,7 @@ export function CoinMap({ coins, width = 960, animate = true, title, idPrefix = 
       <svg
         className={`coin-map${animate ? " animate" : ""}`}
         viewBox={`0 0 ${width} ${Math.max(height, 40)}`}
-        role="img"
+        role={coins.some((c) => c.href) ? "group" : "img"}
         aria-label={title}
       >
         <defs>
