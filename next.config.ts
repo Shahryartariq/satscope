@@ -3,8 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // bip322-js and bitcoinjs-lib run only on the server (signature checks, address parsing).
-  serverExternalPackages: ["bip322-js", "bitcoinjs-lib", "ecpair", "@bitcoinerlab/secp256k1"],
   async headers() {
     return [
       {

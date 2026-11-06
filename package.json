@@ -5,7 +5,7 @@
   "description": "Free Bitcoin wallet checkup: see BTC, Ordinals and Runes in one view, catch risks before you lose an inscription, and prove you own an address.",
   "license": "MIT",
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
