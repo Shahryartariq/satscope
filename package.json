@@ -1,0 +1,49 @@
+{
+  "name": "satscope",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free Bitcoin wallet checkup: see BTC, Ordinals and Runes in one view, catch risks before you lose an inscription, and prove you own an address.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "check": "npm run typecheck && npm test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "@omnisat/lasereyes-core": "0.0.85",
+    "@vercel/functions": "3.11.0",
+    "bip322-js": "4.0.1",
+    "bitcoinjs-lib": "7.0.5",
+    "nanostores": "1.5.5",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.0",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "alkanes": "file:./vendor/empty-module",
+    "@oyl/sdk": "file:./vendor/empty-module"
+  }
+}
