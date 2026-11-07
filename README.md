@@ -32,6 +32,31 @@ financial advice.
 | ------------------------------------------- | ------------------------------------------ | -------------------------------------- |
 | ![Report](docs/screenshots/report-dark.png) | ![Coin map](docs/screenshots/coin-map.png) | ![Mobile](docs/screenshots/mobile.png) |
 
+## One-click fixes
+
+Finding a problem is half the job. When inscriptions or Runes sit in a payment address, or plain coins pile up,
+Satscope builds the fix as a PSBT for your wallet to sign:
+
+| Pick a fix                                       | Review every coin, then sign                         |
+| ------------------------------------------------ | ---------------------------------------------------- |
+| ![Fix list](docs/screenshots/fix-list-light.png) | ![Review step](docs/screenshots/fix-review-dark.png) |
+
+- **Move to the Ordinals address:** each at-risk coin is spent whole and becomes an output of the same value at the
+  same position, so every inscription keeps its offset (sats are assigned first in, first out). A Runes-only coin goes
+  first: with no runestone, all Runes land on output 0, and that keeps them off inscriptions. Fees come only from
+  index-checked plain bitcoin, and change returns to the payment address.
+- **Merge plain coins** into one coin at the same address, at the fee speed you choose. Coins that would cost more to
+  spend than they hold are left out.
+- **Safety checks before anything is sent:** the wallet's public keys must produce the addresses being spent; the
+  signed transaction must spend exactly the reviewed coins and pay exactly the reviewed outputs; every signature must
+  commit to the whole transaction (`SIGHASH_ALL` or Taproot default). Only then does a second click broadcast it to
+  mempool.space. Replace-by-fee is on, the fee rate never drops below 1 sat/vB, and change below dust goes to the fee.
+- Works with Taproot, Native SegWit and Nested SegWit inputs, so Xverse, UniSat, Leather and Magic Eden users are
+  covered.
+
+The flow is tested end to end with a mock Leather wallet that really signs, using the public key from the BIP-322 test
+vectors, with the broadcast intercepted.
+
 ## Features
 
 - **Wallet connect with [LaserEyes](https://github.com/omnisat/lasereyes-mono):** Xverse, UniSat, Leather, Magic Eden,
@@ -68,6 +93,8 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
   function instances and merges identical requests in flight.
 - `src/lib/budget.ts` keeps usage inside the UniSat free plan and limits each visitor.
 - `src/lib/address.ts` validates mainnet addresses (bech32, bech32m and base58check) in the browser and on the server.
+- `src/lib/fix.ts` plans fix transactions (pure, unit-tested) and `src/lib/psbt.ts` builds the PSBT, verifies the
+  signed result and broadcasts it. bitcoinjs-lib loads only when someone signs.
 - `src/lib/proof.ts` and `src/lib/verify.ts` build, pack and verify ownership proofs with
   [bip322-js](https://github.com/ACken2/bip322-js).
 - `src/components/wallet/` wraps LaserEyes.
@@ -75,7 +102,7 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
 ## Tech stack
 
 Next.js 16 (App Router), React 19, TypeScript (strict), hand-written CSS with design tokens, self-hosted Bricolage
-Grotesque and Martian Mono, LaserEyes, bip322-js, Vitest, Playwright with axe-core, GitHub Actions, Vercel.
+Grotesque and Martian Mono, LaserEyes, bitcoinjs-lib (PSBTs), bip322-js, Vitest, Playwright with axe-core, GitHub Actions, Vercel.
 
 Security: per-request nonce Content Security Policy, HSTS, no inline styles, no cookies, and addresses are stripped from
 analytics page paths.

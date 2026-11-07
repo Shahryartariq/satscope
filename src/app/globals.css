@@ -1696,3 +1696,118 @@ fieldset {
     height: 112px;
   }
 }
+
+/* ---------- Fixes ---------- */
+
+.fix-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.fix {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+
+.fix-move {
+  border-color: color-mix(in oklab, var(--orange) 55%, var(--line));
+  background: color-mix(in oklab, var(--orange) 6%, var(--panel));
+}
+
+.fix h3 {
+  font-size: 18px;
+}
+
+.fix p {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 15px;
+  max-width: 40em;
+}
+
+@media (max-width: 640px) {
+  .fix {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.fix-heading {
+  font-size: 19px;
+}
+
+.fix-tables h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.speed-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.speed-row legend {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.speed:has(input:checked) {
+  border-color: var(--orange);
+}
+
+.speed input {
+  accent-color: var(--orange);
+}
+
+.speed small {
+  display: block;
+  font-weight: 500;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.confirm-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: 500;
+}
+
+.confirm-row input {
+  margin-top: 5px;
+  accent-color: var(--orange);
+  width: 18px;
+  height: 18px;
+}
+
+.unscored {
+  justify-items: start;
+  text-align: left;
+}
+
+.stack > .actions-row {
+  display: flex;
+}

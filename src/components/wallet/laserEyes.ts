@@ -20,6 +20,8 @@ export interface Connected {
   address: string;
   /** Payment address; the same as `address` in single-address wallets. */
   paymentAddress: string;
+  /** Public keys (hex) by address, needed to build transactions. */
+  keys: Record<string, string>;
 }
 
 const NAMES: Partial<Record<string, string>> = {
@@ -50,7 +52,9 @@ export function loadClient() {
       try {
         // Don't silently reconnect a wallet from an earlier visit.
         localStorage.removeItem("defaultWallet");
-        for (const k of Object.keys(localStorage)) if (/lasereyes/i.test(k)) localStorage.removeItem(k);
+        for (const k of Object.keys(localStorage)) {
+          if (/lasereyes|CONNECTED_WALLET_STATE/i.test(k)) localStorage.removeItem(k);
+        }
       } catch {
         /* storage blocked */
       }
@@ -72,6 +76,12 @@ export async function listWallets(waitMs = 1200): Promise<WalletOption[]> {
   while (client.$store.get().isInitializing && Date.now() - start < waitMs) {
     await new Promise((r) => setTimeout(r, 100));
   }
+  // LaserEyes spots most wallets with a MutationObserver, which only fires when
+  // the page changes. Satscope loads it after the page has settled, so nudge it.
+  const nudge = document.createElement("span");
+  nudge.hidden = true;
+  document.body.appendChild(nudge);
+  nudge.remove();
   await new Promise((r) => setTimeout(r, 250));
   const has = client.$store.get().hasProvider ?? {};
   const supported = lib.SUPPORTED_WALLETS as Record<string, { name: string; url: string }>;
@@ -92,7 +102,24 @@ export async function connectWallet(provider: ProviderType): Promise<Connected> 
   await client.connect(provider);
   const s = client.$store.get();
   if (!s.connected || !s.address) throw new Error("The wallet didn't share an address.");
-  return { provider, address: s.address, paymentAddress: s.paymentAddress || s.address };
+  const paymentAddress = s.paymentAddress || s.address;
+  const keys: Record<string, string> = {};
+  if (s.publicKey) keys[s.address] = s.publicKey;
+  if (s.paymentPublicKey) keys[paymentAddress] = s.paymentPublicKey;
+  else if (s.publicKey && paymentAddress === s.address) keys[paymentAddress] = s.publicKey;
+  return { provider, address: s.address, paymentAddress, keys };
+}
+
+/**
+ * Asks the wallet to sign (and finalise) a PSBT. Satscope never asks the
+ * wallet to broadcast; it checks the result first and broadcasts itself.
+ */
+export async function signPsbtWithWallet(psbtHex: string, inputsToSign: { index: number; address: string }[]) {
+  const { client } = await loadClient();
+  const res = await client.signPsbt({ tx: psbtHex, finalize: true, broadcast: false, inputsToSign });
+  const signed = res?.signedPsbtHex || res?.signedPsbtBase64;
+  if (!signed) throw new Error("The wallet didn't return a signed transaction.");
+  return signed;
 }
 
 export async function signWithWallet(message: string, address: string): Promise<string> {
@@ -113,6 +140,7 @@ export function walletErrorMessage(err: unknown): string {
   if (/not (installed|detected|found)|unsupported wallet/i.test(msg))
     return "That wallet isn't installed in this browser.";
   if (/network/i.test(msg)) return "Switch your wallet to Bitcoin mainnet and try again.";
-  if (/doesn't support/i.test(msg)) return msg;
+  if (/doesn't support|PSBT signing/i.test(msg))
+    return "This wallet can't sign transactions through the browser. Try Xverse, UniSat or Leather.";
   return "The wallet didn't respond. Unlock it and try again.";
 }

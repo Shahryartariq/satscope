@@ -68,7 +68,7 @@ export function WalletDialog({ open, onClose, onConnected, note }: Props) {
             <li key={w.id}>
               <button type="button" onClick={() => pick(w)} disabled={busy !== null}>
                 {w.name}
-                <span className="hint">{busy === w.id ? "Check your wallet…" : "Installed"}</span>
+                <span className="hint">{busy === w.id ? "Check your wallet…" : "Ready"}</span>
               </button>
             </li>
           ))}
