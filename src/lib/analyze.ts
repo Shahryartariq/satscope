@@ -280,7 +280,11 @@ export function buildReport(snaps: AddressSnapshot[], market: MarketData, now = 
   const penalty = findings.reduce((s, f) => s + SEVERITY_PENALTY[f.severity], 0);
   const score = Math.max(0, Math.min(100, 100 - penalty));
 
-  const sats = coins.reduce((s, c) => s + c.value, 0);
+  // Addresses too large to list coin by coin still have a balance from their history.
+  const unlisted = snaps
+    .filter((s) => s.tooManyCoins)
+    .reduce((sum, s) => sum + Math.max(0, s.stats.receivedSats - s.stats.sentSats), 0);
+  const sats = coins.reduce((s, c) => s + c.value, 0) + unlisted;
   const protectedSats = coins.filter((c) => isProtected(c.kind)).reduce((s, c) => s + c.value, 0);
   const runeIds = new Set(snaps.flatMap((s) => s.runeBalances.map((r) => r.id)));
   for (const c of coins) for (const r of c.runes) runeIds.add(r.id);
@@ -291,6 +295,7 @@ export function buildReport(snaps: AddressSnapshot[], market: MarketData, now = 
     findings,
     score,
     grade: gradeFor(score),
+    scored: !snaps.some((s) => s.tooManyCoins),
     totals: {
       sats,
       coins: coins.length,

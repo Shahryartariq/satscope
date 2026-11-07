@@ -115,6 +115,19 @@ describe("buildReport", () => {
     expect(r2.coins.find((c) => c.value === 546)!.kind).toBe("unverified");
   });
 
+  it("uses the address history for very large addresses and doesn't score them", () => {
+    const big: AddressSnapshot = {
+      ...get(SAMPLE_LEGACY),
+      coins: [],
+      tooManyCoins: true,
+      stats: { txCount: 67_398, receivedSats: 5_710_000_000, sentSats: 0, pendingTxCount: 0 },
+    };
+    const r = buildReport([big], SAMPLE_MARKET);
+    expect(r.totals.sats).toBe(5_710_000_000);
+    expect(r.scored).toBe(false);
+    expect(ids(r)).toContain("too-many-coins");
+  });
+
   it("handles an empty address", () => {
     const empty: AddressSnapshot = {
       ...get(SAMPLE_SMALL),

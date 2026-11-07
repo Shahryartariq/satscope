@@ -80,7 +80,7 @@ async function snapshot(target: Target): Promise<AddressSnapshot> {
     } catch {
       indexed = false;
     }
-  } else if (coins.length === 0) {
+  } else if (coins.length === 0 && !tooManyCoins) {
     indexed = true; // nothing to check
   }
 

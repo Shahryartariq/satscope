@@ -309,11 +309,83 @@ const legacy = snap(
   { indexed: false },
 );
 
+/**
+ * A wallet whose keys are public: both addresses come from the private key in
+ * the BIP-322 test vectors. The end-to-end tests use it with a mock wallet that
+ * really signs, so the whole fix flow (build, sign, check, broadcast) is tested.
+ * Never send real bitcoin to these addresses; anyone can spend from them.
+ */
+export const TEST_WALLET_PAYMENT = "bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l";
+export const TEST_WALLET_ORDINALS = "bc1ppv609nr0vr25u07u95waq5lucwfm6tde4nydujnu8npg4q75mr5sxq8lt3";
+
+const testPayment = snap(
+  TEST_WALLET_PAYMENT,
+  { txCount: 8, receivedSats: 147_092, sentSats: 0, pendingTxCount: 0 },
+  [
+    ...[60_000, 35_000, 21_000, 14_500, 9_000, 6_500].map((value, i): Coin => ({
+      txid: fakeTxid(400 + i),
+      vout: i % 2,
+      value,
+      confirmed: true,
+      height: 973_000 + i * 50,
+      time: T0 + 2_000_000 + i * 40_000,
+      inscriptions: [],
+      runes: [],
+    })),
+    {
+      txid: fakeTxid(420),
+      vout: 0,
+      value: 546,
+      confirmed: true,
+      height: 974_100,
+      time: T0 + 2_600_000,
+      inscriptions: [{ id: `${fakeTxid(421)}i0`, number: 102_345_678 }],
+      runes: [],
+    },
+    {
+      txid: fakeTxid(430),
+      vout: 1,
+      value: 546,
+      confirmed: true,
+      height: 974_200,
+      time: T0 + 2_700_000,
+      inscriptions: [],
+      runes: [{ id: "840000:3", name: "DOG•GO•TO•THE•MOON", amount: "2500000", divisibility: 5, symbol: "🐕" }],
+    },
+  ],
+  { runeBalances: [{ id: "840000:3", name: "DOG•GO•TO•THE•MOON", amount: "2500000", divisibility: 5, symbol: "🐕" }] },
+);
+
+const testOrdinals = snap(TEST_WALLET_ORDINALS, { txCount: 2, receivedSats: 876, sentSats: 0, pendingTxCount: 0 }, [
+  {
+    txid: fakeTxid(440),
+    vout: 0,
+    value: 546,
+    confirmed: true,
+    height: 974_300,
+    time: T0 + 2_800_000,
+    inscriptions: [{ id: `${fakeTxid(441)}i0`, number: 103_000_001 }],
+    runes: [],
+  },
+  {
+    txid: fakeTxid(450),
+    vout: 0,
+    value: 330,
+    confirmed: true,
+    height: 974_310,
+    time: T0 + 2_810_000,
+    inscriptions: [{ id: `${fakeTxid(451)}i0`, number: 103_000_042 }],
+    runes: [],
+  },
+]);
+
 export const SAMPLE_SNAPSHOTS: Record<string, AddressSnapshot> = {
   [SAMPLE_COLLECTOR]: collector,
   [SAMPLE_SMALL]: small,
   [SAMPLE_PAYMENT]: payment,
   [SAMPLE_LEGACY]: legacy,
+  [TEST_WALLET_PAYMENT]: testPayment,
+  [TEST_WALLET_ORDINALS]: testOrdinals,
 };
 
 export const SAMPLE_MARKET: MarketData = {

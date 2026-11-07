@@ -133,9 +133,10 @@ test.describe("proofs", () => {
     await page.getByRole("button", { name: "Connect wallet" }).click();
     const dialog = page.getByRole("dialog", { name: "Connect a Bitcoin wallet" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText("No Bitcoin wallet found")).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByRole("link", { name: /Xverse/ })).toBeVisible();
-    await expect(dialog.getByRole("link", { name: /UniSat/ })).toBeVisible();
+    // Desktop: nothing installed, so every wallet is a link to get it. Phones: LaserEyes
+    // offers Xverse and Tokeo, which open their mobile apps.
+    await expect(dialog.getByRole("link", { name: /UniSat/ })).toBeVisible({ timeout: 15_000 });
+    await expect(dialog.getByText(/^Xverse/)).toBeVisible();
     await dialog.getByRole("button", { name: "Close" }).click();
     await expect(dialog).toBeHidden();
     expect(errors.filter((e) => !/favicon/.test(e))).toEqual([]);

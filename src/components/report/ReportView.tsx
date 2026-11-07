@@ -15,6 +15,7 @@ import type { CoinKind, Report } from "@/lib/types";
 import { CopyButton } from "../CopyButton";
 import { CoinMap, KIND_LABEL, Legend } from "../CoinMap";
 import { coinAnchor, Findings } from "./Findings";
+import { FixPanel } from "./FixPanel";
 import { ScoreDial } from "./ScoreDial";
 
 const ROLE_LABEL = { ordinals: "Ordinals address", payment: "Payment address", single: "Address" } as const;
@@ -87,7 +88,17 @@ export function ReportView({ report }: { report: Report }) {
 
         <div className="summary-grid">
           <section className="panel" aria-label="Health score">
-            <ScoreDial score={report.score} grade={report.grade} />
+            {report.scored ? (
+              <ScoreDial score={report.score} grade={report.grade} />
+            ) : (
+              <div className="score unscored">
+                <h2 className="score-verdict">Too large to score</h2>
+                <p className="muted">
+                  This address has more coins than Satscope reads one by one, so there is no health score. The balance
+                  comes from its full history.
+                </p>
+              </div>
+            )}
           </section>
           <section className="panel" aria-labelledby="totals-title">
             <h2 id="totals-title" className="sr-only">
@@ -104,8 +115,8 @@ export function ReportView({ report }: { report: Report }) {
               <div className="total">
                 <dt>Coins</dt>
                 <dd>
-                  {totals.coins.toLocaleString("en-US")}
-                  <small>unspent outputs</small>
+                  {report.scored ? totals.coins.toLocaleString("en-US") : "Too many"}
+                  <small>{report.scored ? "unspent outputs" : "to list one by one"}</small>
                 </dd>
               </div>
               <div className="total">
@@ -168,6 +179,29 @@ export function ReportView({ report }: { report: Report }) {
           </div>
           <Findings findings={report.findings} multiAddress={multi} />
         </section>
+
+        {report.scored && report.coins.length > 0 ? (
+          <FixPanel
+            addresses={report.addresses.map((a) => ({
+              address: a.address,
+              type: a.type,
+              role: a.role,
+              indexed: a.indexed,
+            }))}
+            coins={report.coins.map((c) => ({
+              txid: c.txid,
+              vout: c.vout,
+              value: c.value,
+              address: c.address,
+              kind: c.kind,
+              confirmed: c.confirmed,
+              inscriptions: c.inscriptions.length,
+              runes: c.runes.map((r) => r.name),
+            }))}
+            fees={market.fees}
+            usd={market.usd}
+          />
+        ) : null}
 
         {report.coins.length > 0 ? (
           <section className="panel" aria-labelledby="map-title">

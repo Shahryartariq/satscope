@@ -110,6 +110,8 @@ export interface Report {
   findings: Finding[];
   score: number;
   grade: "A" | "B" | "C" | "D" | "F";
+  /** False when an address had too many coins to read; the score then means nothing. */
+  scored: boolean;
   totals: {
     sats: number;
     coins: number;
