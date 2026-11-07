@@ -14,7 +14,8 @@ import type { AddressType, CoinKind } from "./types";
  *   order, at the front of the transaction, so every inscription keeps its
  *   offset (sats are assigned first-in, first-out).
  * - Output 0 goes to the Ordinals address. With no runestone, Runes from all
- *   inputs go to the first non-OP_RETURN output, so they land there too.
+ *   inputs go to the first non-OP_RETURN output, so they land there too, on a
+ *   Runes-only coin when there is one rather than on an inscription.
  * - Every output goes to an address the connected wallet controls.
  */
 
@@ -118,7 +119,13 @@ export function planMove(opts: {
 
   const risky = atRiskCoins(coins, from);
   if (risky.length === 0) return { ok: false, reason: "There are no inscriptions or Runes to move." };
-  const movable = risky.filter((c) => c.value >= DUST_LIMIT[toType]).slice(0, MAX_MOVE_COINS);
+  // With no runestone, every Rune in the transaction lands on output 0. Put a
+  // Runes-only coin there when there is one, so Runes never pile onto an inscription.
+  const order = { runic: 0, mixed: 1, inscribed: 2 } as Record<string, number>;
+  const movable = risky
+    .filter((c) => c.value >= DUST_LIMIT[toType])
+    .sort((a, b) => (order[a.kind] ?? 3) - (order[b.kind] ?? 3))
+    .slice(0, MAX_MOVE_COINS);
   if (movable.length === 0) {
     return {
       ok: false,

@@ -57,13 +57,10 @@ describe("planMove", () => {
     if (!r.ok) return;
     const { plan } = r;
     expect(plan.inputs.map((i) => i.purpose)).toEqual(["move", "move", "move", "fee"]);
-    expect(plan.inputs.slice(0, 3).map((i) => i.value)).toEqual([546, 10_000, 546]);
     // Each moved coin becomes an output of the same value at the same position.
-    expect(plan.outputs.slice(0, 3)).toEqual([
-      { address: ORD, value: 546, purpose: "moved" },
-      { address: ORD, value: 10_000, purpose: "moved" },
-      { address: ORD, value: 546, purpose: "moved" },
-    ]);
+    expect(plan.outputs.slice(0, 3)).toEqual(
+      plan.inputs.slice(0, 3).map((i) => ({ address: ORD, value: i.value, purpose: "moved" })),
+    );
     // Output 0 is the Ordinals address, so Runes (no runestone) land there.
     expect(plan.outputs[0]!.address).toBe(ORD);
     // Fees come from the largest plain coin; change returns to the payment address.
@@ -75,6 +72,12 @@ describe("planMove", () => {
     expect(used).not.toContain(txid(6));
     expect(used).not.toContain(txid(7));
     expect(used).not.toContain(txid(8));
+  });
+
+  it("puts a Runes-only coin first so Runes don't land on an inscription", () => {
+    const r = planMove({ coins, from: PAY, to: ORD, feeRate: 2, indexed: true });
+    if (!r.ok) throw new Error(r.reason);
+    expect(r.plan.inputs.slice(0, 3).map((i) => i.kind)).toEqual(["runic", "mixed", "inscribed"]);
   });
 
   it("produces a transaction a wallet can sign that matches the plan", () => {
@@ -181,6 +184,17 @@ describe("checkSigned", () => {
     evil.signAllInputs(key);
     evil.finalizeAllInputs();
     expect(() => checkSigned(plan, evil.toHex())).toThrow(/different outputs/);
+  });
+
+  it("rejects signatures that would let others change the outputs", () => {
+    const psbt = buildPsbt(plan, KEYS);
+    const SIGHASH_NONE_ANYONECANPAY = 0x82;
+    plan.inputs.forEach((_, i) => {
+      psbt.updateInput(i, { sighashType: SIGHASH_NONE_ANYONECANPAY });
+      psbt.signInput(i, key, [SIGHASH_NONE_ANYONECANPAY]);
+    });
+    psbt.finalizeAllInputs();
+    expect(() => checkSigned(plan, psbt.toHex())).toThrow(/unusual signature type/);
   });
 
   it("rejects a PSBT the wallet didn't sign", () => {

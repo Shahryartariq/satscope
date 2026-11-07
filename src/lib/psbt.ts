@@ -75,6 +75,23 @@ export function buildPsbt(plan: FixPlan, keys: WalletKeys): Psbt {
   return psbt;
 }
 
+/**
+ * True when the input's signature commits to all inputs and outputs
+ * (SIGHASH_ALL, or SIGHASH_DEFAULT for Taproot). Anything else would let
+ * someone alter the transaction after it is broadcast.
+ */
+function signsEverything(witness: Uint8Array[], type: string): boolean {
+  if (type === "p2tr") {
+    if (witness.length !== 1) return false;
+    const sig = witness[0]!;
+    return sig.length === 64 || (sig.length === 65 && sig[64] === 0x01);
+  }
+  // P2WPKH and P2SH-P2WPKH: [DER signature + sighash byte, public key].
+  if (witness.length !== 2) return false;
+  const sig = witness[0]!;
+  return sig.length > 0 && sig[sig.length - 1] === 0x01;
+}
+
 export interface SignedCheck {
   txHex: string;
   txid: string;
@@ -119,6 +136,13 @@ export function checkSigned(plan: FixPlan, signed: string): SignedCheck {
     const txid = bytesToHex(Uint8Array.from(inp.hash).reverse());
     if (txid !== want.txid || inp.index !== want.vout) {
       throw new Error("The signed transaction spends different coins than planned.");
+    }
+  });
+  tx.ins.forEach((inp, i) => {
+    if (!signsEverything(inp.witness, plan.inputs[i]!.type)) {
+      throw new Error(
+        "The wallet used an unusual signature type that would let others change the transaction. Nothing was sent.",
+      );
     }
   });
   if (tx.outs.length !== plan.outputs.length)

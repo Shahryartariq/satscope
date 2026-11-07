@@ -1807,3 +1807,7 @@ fieldset {
   justify-items: start;
   text-align: left;
 }
+
+.stack > .actions-row {
+  display: flex;
+}

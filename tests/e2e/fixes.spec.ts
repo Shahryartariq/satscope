@@ -79,8 +79,9 @@ test.describe("one-click fixes", () => {
 
     const spent = panel.locator("table").first().locator("tbody tr");
     await expect(spent).toHaveCount(3);
-    await expect(spent.nth(0)).toContainText("1 inscription");
-    await expect(spent.nth(1)).toContainText("DOG•GO•TO•THE•MOON");
+    // The Runes-only coin goes first, so its Runes stay off the inscription.
+    await expect(spent.nth(0)).toContainText("DOG•GO•TO•THE•MOON");
+    await expect(spent.nth(1)).toContainText("1 inscription");
     await expect(spent.nth(2)).toContainText("pays the fee");
     const created = panel.locator("table").nth(1).locator("tbody tr");
     await expect(created.nth(0)).toContainText("Your Ordinals address");
