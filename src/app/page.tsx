@@ -5,7 +5,7 @@ import { CoinMap, KIND_LABEL, Legend } from "@/components/CoinMap";
 import { buildReport } from "@/lib/analyze";
 import { formatSats, outpoint } from "@/lib/format";
 import { SAMPLE_COLLECTOR, SAMPLE_MARKET, SAMPLE_PAYMENT, SAMPLE_SMALL, SAMPLE_SNAPSHOTS } from "@/lib/sample";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata = {
   alternates: { canonical: "/" },
@@ -116,6 +116,15 @@ export default async function Home() {
   const top = demo.findings[0]!;
   const kinds = [...new Set(demo.coins.map((c) => c.kind))];
   const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      inLanguage: "en",
+      author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url },
+    },
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
