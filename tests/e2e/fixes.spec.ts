@@ -2,6 +2,7 @@ import ecc from "@bitcoinerlab/secp256k1";
 import { address, crypto, initEccLib, networks, Psbt, toXOnly, Transaction } from "bitcoinjs-lib";
 import { ECPairFactory } from "ecpair";
 import { expect, test, type Page } from "@playwright/test";
+import { stubOrdinals } from "./ordinals";
 
 /**
  * End-to-end test of the one-click fixes with a mock Leather wallet that really
@@ -25,6 +26,7 @@ function signLikeAWallet(hex: string): string {
 
 async function installMockWallet(page: Page): Promise<{ broadcasts: string[] }> {
   const broadcasts: string[] = [];
+  await stubOrdinals(page);
   await page.exposeFunction("__mockSignPsbt", signLikeAWallet);
   await page.addInitScript(
     ({ pay, ord, pub }) => {

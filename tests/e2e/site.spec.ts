@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { stubOrdinals } from "./ordinals";
 
 const SMALL = "bc1pvep9uh9smsr3xln4lql5xx53lmnfm2pxyr3pxvg7anpvu73zz9fqmf8rk3";
 const PAYMENT = "bc1q80z72mugw2g52utqgd5y9audpae4ghp8atmthm";
@@ -10,6 +11,10 @@ const VECTOR = {
   m: "Hello World",
   s: "AkcwRAIgZRfIY3p7/DoVTty6YZbWS71bc5Vct9p9Fia83eRmw2QCICK/ENGfwLtptFluMGs2KsqoNSk89pO7F29zJLUx9a/sASECx/EgAxlkQpQ9hYjgGu6EBCPMVPwVIVJqO4XCsMvViHI=",
 };
+
+test.beforeEach(async ({ page }) => {
+  await stubOrdinals(page);
+});
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -191,6 +196,7 @@ for (const scheme of ["light", "dark"] as const) {
       "/",
       `/wallet?o=${SMALL}&p=${PAYMENT}`,
       `/address/${LEGACY}`,
+      `/address/${COLLECTOR}`,
       "/prove",
       "/verify",
       "/learn/utxo-consolidation",

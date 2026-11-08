@@ -22,7 +22,8 @@ export function spendUnits(units: number, now = Date.now()): boolean {
 
 /** Per-visitor limit on fresh checkups: `limit` per `windowMs`. */
 const WINDOW_MS = 10 * 60_000;
-const VISITOR_LIMIT = 30;
+/** Checkups per visitor per window. Tests raise it with SATSCOPE_VISITOR_LIMIT. */
+const VISITOR_LIMIT = Number(process.env.SATSCOPE_VISITOR_LIMIT || 30);
 const hits = new Map<string, number[]>();
 
 export function allowVisitor(id: string, now = Date.now(), limit = VISITOR_LIMIT, windowMs = WINDOW_MS): boolean {

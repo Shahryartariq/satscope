@@ -18,10 +18,17 @@ export default function PrivacyPage() {
 
       <h2>Addresses you check</h2>
       <p>
-        To build a report, Satscope&apos;s server asks mempool.space, blockstream.info and the UniSat indexer about the
-        address. Those services see the request come from Satscope&apos;s server, not from you. Results are cached for
-        up to ten minutes so repeat visits are fast, then discarded. Bitcoin addresses and their history are public on
-        the blockchain.
+        To build a report, Satscope&apos;s server asks mempool.space, blockstream.info, the UniSat indexer and
+        ordinals.com about the address. Those services see the request come from Satscope&apos;s server, not from you.
+        Results are cached for up to ten minutes so repeat visits are fast, then discarded. Bitcoin addresses and their
+        history are public on the blockchain.
+      </p>
+
+      <h2>Inscription previews</h2>
+      <p>
+        Reports show inscriptions as they look on ordinals.com, the public server run by the ord project. Your browser
+        loads those images and previews straight from ordinals.com, so it sees your IP address and which inscriptions
+        you viewed, the same as visiting it yourself. Satscope sends no referrer with those requests.
       </p>
 
       <h2>Wallet connection</h2>

@@ -1,3 +1,4 @@
+import { planMerge } from "@/lib/fix";
 import { describe, expect, it } from "vitest";
 import { buildReport, classifyCoin, gradeFor } from "@/lib/analyze";
 import {
@@ -98,9 +99,27 @@ describe("buildReport", () => {
     const c = r.consolidation!;
     expect(c.coinCount).toBe(14);
     expect(c.vbytes).toBe(Math.ceil(10.5 + 14 * 68 + 31));
-    expect(c.costNow).toBe(Math.ceil(c.vbytes * 0.5));
+    // The no-rush rate is 0.5 sat/vB, but fixes never pay under 1 sat/vB, so neither does the estimate.
+    expect(c.rateNow).toBe(1);
+    expect(c.costNow).toBe(c.vbytes);
     expect(c.rateBusy).toBe(20);
     expect(c.costBusy).toBe(c.vbytes * 20);
+  });
+
+  it("counts the same coins to merge as the merge fix", () => {
+    const cheap: MarketData = { ...SAMPLE_MARKET, fees: { ...SAMPLE_MARKET.fees, economy: 0.1 } };
+    const snap = get(SAMPLE_PAYMENT, "payment");
+    // A 60-sat coin is worth spending at 0.1 sat/vB (6.8 sats) but not at the 1 sat/vB floor (68 sats).
+    const tiny = { ...snap.coins[0]!, txid: "ab".repeat(32), vout: 7, value: 60 };
+    const r = buildReport([{ ...snap, coins: [...snap.coins, tiny] }], cheap);
+    const plan = planMerge({
+      coins: r.coins.map((c) => ({ ...c, inscriptions: c.inscriptions.length, runes: c.runes.map((x) => x.name) })),
+      address: SAMPLE_PAYMENT,
+      feeRate: cheap.fees.economy,
+      indexed: true,
+    });
+    expect(plan.ok).toBe(true);
+    if (plan.ok) expect(r.consolidation!.coinCount).toBe(plan.plan.inputs.length);
   });
 
   it("finds uneconomical coins when fees are high", () => {

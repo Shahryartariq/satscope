@@ -1,3 +1,4 @@
+import type { InscriptionMeta } from "./inscriptionPreview";
 import type { AddressSnapshot, AddressStats, Coin, MarketData } from "./types";
 import { parseAddress } from "./address";
 
@@ -397,3 +398,68 @@ export const SAMPLE_MARKET: MarketData = {
 export function isSampleMode(): boolean {
   return process.env.SATSCOPE_SAMPLE_DATA === "1";
 }
+
+/**
+ * Inscription details for the gallery in sample mode. The BRC-20 ones are real,
+ * read from ordinals.com on 2026-11-08. The rest belong to the made-up wallets
+ * and cover the other kinds of preview.
+ */
+const brc20 = (tick: string, amt: string) => `{"p":"brc-20","op":"transfer","tick":"${tick}","amt":"${amt}"}`;
+const PI = "𝛑";
+const real: [id: string, number: number, text: string][] = [
+  ["bf4c141c6b623d46983401133f7548206db434c46404286c814cf9db9e3685b2i0", 126063442, brc20(PI, "10000000000")],
+  ["18f8a18136f579fd34da6240236dca141787dd98d1a7db74ac1c2fc58d57c7b4i0", 127701535, brc20(PI, "9676777776")],
+  ["f8c6ecdb187ab6c6dc03e553b70134fd466e4406c9bed764f354a016f28c5d32i0", 111933257, brc20(PI, "10000000000")],
+  ["fa302e503bd647fe4ca39dcc7b31aebc02eba17b4195f9dbaaaed8ca28ccd4b3i0", 127701419, brc20(PI, "26000000000")],
+  ["a36c53ce104cbc04186bbc452a0435a6e03ada0ab0b40ddd83c3904d51780994i0", 126399619, brc20(PI, "20000000000")],
+  ["03ae587c1f4cee2a79c87470e4f26fc4e9a1af24855d1ed9718102d085c591dei0", 127833057, brc20(PI, "3300000000")],
+  ["4502f76e9e06f06ef34546ed061a73604d320af2d260e2ae81ccc9b80d53b769i0", 127829716, brc20("BCLD", "7125686583")],
+  ["6d9f85d8bd915fbf2609d2aa4a72c4601c2cb1162340f375d6b7ebcba3824a8ci0", 127833056, brc20(PI, "3800000000")],
+  ["768710dd8dea545a9758d26fad9189d90e84cbc1330d5ea2f14027f849a72001i0", 127507312, brc20(PI, "10000000000")],
+  ["8a267080a9f640c608c545eb486a6d29fef32c9c70afa73abdbc8d44db32f9a7i0", 127833066, brc20(PI, "3500000000")],
+  ["acf0e787bfbd6b3b6f94a4ac95b706fc2fff5a5771028e4f5dcd823ec3279ea1i0", 111933173, brc20(PI, "6111111111")],
+  ["b6e3a4e436ca95a737f6d294186886146a5f7d796ffd1d1351259a97cf32a362i0", 117210125, brc20(PI, "636166670")],
+  ["be53387a072dcf09c45f63db068f10c59550c5c62ee2c3e330d58ab9ae9bc3f2i0", 127833072, brc20("BCLD", "11946794639")],
+  ["d21c97b4b20e742efc226aa91017d4f8cbe868cca95c721dc49eaeab232a929ci0", 127829754, brc20("BCLD", "15444159600")],
+  ["f873e2e80990f2ec004862f68d66afe7112652afedb6c2357809a49ae7fd1345i0", 127701274, brc20(PI, "15000000000")],
+  ["fc82c69db9a7ccc04332f463b8389e5d918d4475e13eba6a0aee3cdf777d38a8i0", 127833067, brc20(PI, "3600000000")],
+];
+
+export const SAMPLE_INSCRIPTIONS: Record<string, InscriptionMeta> = Object.fromEntries([
+  ...real.map(([id, number, text]) => [
+    id,
+    { id, number, contentType: "text/plain;charset=utf-8", contentLength: new TextEncoder().encode(text).length, text },
+  ]),
+  [
+    `${fakeTxid(201)}i0`,
+    { id: `${fakeTxid(201)}i0`, number: 98_765_432, contentType: "image/png", contentLength: 793 },
+  ],
+  [
+    `${fakeTxid(421)}i0`,
+    {
+      id: `${fakeTxid(421)}i0`,
+      number: 102_345_678,
+      contentType: "text/plain;charset=utf-8",
+      contentLength: 48,
+      text: "gm. Block 840,000, the fourth halving, was here.",
+    },
+  ],
+  [
+    `${fakeTxid(211)}i0`,
+    {
+      id: `${fakeTxid(211)}i0`,
+      number: 101_000_111,
+      contentType: "application/json",
+      contentLength: 53,
+      text: '{"p":"brc-20","op":"mint","tick":"ordi","amt":"1000"}',
+    },
+  ],
+  [
+    `${fakeTxid(441)}i0`,
+    { id: `${fakeTxid(441)}i0`, number: 103_000_001, contentType: "text/html;charset=utf-8", contentLength: 1840 },
+  ],
+  [
+    `${fakeTxid(451)}i0`,
+    { id: `${fakeTxid(451)}i0`, number: 103_000_042, contentType: "image/webp", contentLength: 48_210 },
+  ],
+]);
