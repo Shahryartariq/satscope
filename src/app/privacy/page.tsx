@@ -19,9 +19,9 @@ export default function PrivacyPage() {
       <h2>Addresses you check</h2>
       <p>
         To build a report, Satscope&apos;s server asks mempool.space, blockstream.info, the UniSat indexer and
-        ordinals.com about the address. Those services see the request come from Satscope&apos;s server, not from you.
-        Results are cached for up to ten minutes so repeat visits are fast, then discarded. Bitcoin addresses and their
-        history are public on the blockchain.
+        UniSat&apos;s content server about the address and its inscriptions. Those services see the request come from
+        Satscope&apos;s server, not from you. Results are cached for up to ten minutes so repeat visits are fast, then
+        discarded. Bitcoin addresses and their history are public on the blockchain.
       </p>
 
       <h2>Inscription previews</h2>
