@@ -10,12 +10,13 @@ import {
   outpoint,
   relativeTime,
 } from "@/lib/format";
-import { mempoolAddress, mempoolTx, ordinalsInscription } from "@/lib/site";
+import { mempoolAddress, mempoolTx } from "@/lib/site";
 import type { CoinKind, Report } from "@/lib/types";
 import { CopyButton } from "../CopyButton";
 import { CoinMap, KIND_LABEL, Legend } from "../CoinMap";
 import { coinAnchor, Findings } from "./Findings";
 import { FixPanel } from "./FixPanel";
+import { InscriptionGallery } from "./InscriptionGallery";
 import { ScoreDial } from "./ScoreDial";
 
 const ROLE_LABEL = { ordinals: "Ordinals address", payment: "Payment address", single: "Address" } as const;
@@ -233,87 +234,56 @@ export function ReportView({ report }: { report: Report }) {
           </section>
         )}
 
-        {inscribed.length > 0 || runeTotals.size > 0 ? (
-          <div className="cols">
-            {inscribed.length > 0 ? (
-              <section className="panel" aria-labelledby="ins-title">
-                <div className="panel-title">
-                  <h2 id="ins-title">Inscriptions</h2>
-                  <p>{formatCount(totals.inscriptions, "inscription")}</p>
-                </div>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th scope="col">Inscription</th>
-                        <th scope="col" className="num">
-                          Sats on the coin
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inscribed.flatMap((c) =>
-                        c.inscriptions.map((i) => (
-                          <tr key={i.id}>
-                            <td>
-                              <a href={ordinalsInscription(i.id)} rel="noopener noreferrer" target="_blank">
-                                {i.number != null ? (
-                                  `#${i.number.toLocaleString("en-US")}`
-                                ) : (
-                                  <span className="mono">
-                                    {i.id.slice(0, 10)}…{i.id.slice(-4)}
-                                  </span>
-                                )}
-                              </a>
-                              {multi && c.role === "payment" ? (
-                                <span className="chip chip-warn"> in payment address</span>
-                              ) : null}
-                            </td>
-                            <td className="num">{c.value.toLocaleString("en-US")}</td>
-                          </tr>
-                        )),
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            ) : null}
-            {runeTotals.size > 0 ? (
-              <section className="panel" aria-labelledby="runes-title">
-                <div className="panel-title">
-                  <h2 id="runes-title">Runes</h2>
-                  <p>{formatCount(runeTotals.size, "token")}</p>
-                </div>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th scope="col">Rune</th>
-                        <th scope="col" className="num">
-                          Amount
-                        </th>
-                        <th scope="col" className="num">
-                          Coins
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...runeTotals].map(([id, r]) => (
-                        <tr key={id}>
-                          <td>
-                            {r.symbol ? <span aria-hidden="true">{r.symbol} </span> : null}
-                            {r.name}
-                          </td>
-                          <td className="num">{formatRuneAmount(r.amount.toString(), r.divisibility)}</td>
-                          <td className="num">{r.coins}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            ) : null}
-          </div>
+        {inscribed.length > 0 ? (
+          <InscriptionGallery
+            items={inscribed.flatMap((c) =>
+              c.inscriptions.map((i) => ({
+                id: i.id,
+                number: i.number,
+                outpoint: outpoint(c),
+                value: c.value,
+                address: c.address,
+                atRisk: c.role === "payment",
+                role: c.role,
+              })),
+            )}
+          />
+        ) : null}
+
+        {runeTotals.size > 0 ? (
+          <section className="panel" aria-labelledby="runes-title">
+            <div className="panel-title">
+              <h2 id="runes-title">Runes</h2>
+              <p>{formatCount(runeTotals.size, "token")}</p>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Rune</th>
+                    <th scope="col" className="num">
+                      Amount
+                    </th>
+                    <th scope="col" className="num">
+                      Coins
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...runeTotals].map(([id, r]) => (
+                    <tr key={id}>
+                      <td>
+                        {r.symbol ? <span aria-hidden="true">{r.symbol} </span> : null}
+                        {r.name}
+                      </td>
+                      <td className="num">{formatRuneAmount(r.amount.toString(), r.divisibility)}</td>
+                      <td className="num">{r.coins}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         ) : null}
 
         {report.consolidation ? (

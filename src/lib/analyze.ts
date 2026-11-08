@@ -1,5 +1,6 @@
 import { ADDRESS_TYPE_LABEL, shortAddress } from "./address";
 import { BUSY_FEE_RATE, inputCost, sweepVbytes } from "./fees";
+import { effectiveRate } from "./fix";
 import { formatCount, formatRate, formatSats, outpoint } from "./format";
 import type {
   AddressSnapshot,
@@ -233,11 +234,17 @@ export function consolidationFor(
   snaps: AddressSnapshot[],
   market: MarketData,
 ): Consolidation | null {
-  const clean = coins.filter((c) => c.kind === "clean");
+  // Same rules as the merge fix (src/lib/fix.ts): confirmed plain coins worth
+  // spending at the fee floor, so the count here matches the fix on offer.
+  const rateNow = effectiveRate(market.fees.economy);
+  const typeOf = (address: string) => snaps.find((s) => s.address === address)!.type;
+  const clean = coins.filter(
+    (c) => c.kind === "clean" && c.confirmed && c.value > inputCost(typeOf(c.address), rateNow),
+  );
   if (clean.length < FRAGMENTED_AT) return null;
   const byType = new Map<AddressSnapshot["type"], number>();
   for (const c of clean) {
-    const t = snaps.find((s) => s.address === c.address)!.type;
+    const t = typeOf(c.address);
     byType.set(t, (byType.get(t) ?? 0) + 1);
   }
   const outType = snaps.find((s) => s.role === "payment")?.type ?? snaps[0]!.type;
@@ -245,7 +252,6 @@ export function consolidationFor(
     [...byType].map(([type, count]) => ({ type, count })),
     outType,
   );
-  const rateNow = market.fees.economy;
   const rateBusy = Math.max(BUSY_FEE_RATE, market.fees.fastest);
   return {
     coinCount: clean.length,

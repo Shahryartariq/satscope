@@ -20,6 +20,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     timeout: 240_000,
     reuseExistingServer: !process.env.CI,
-    env: { SATSCOPE_SAMPLE_DATA: "1", NEXT_TELEMETRY_DISABLED: "1" },
+    env: { SATSCOPE_SAMPLE_DATA: "1", SATSCOPE_VISITOR_LIMIT: "100000", NEXT_TELEMETRY_DISABLED: "1" },
   },
 });

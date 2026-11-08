@@ -21,3 +21,15 @@ export function mempoolAddress(address: string): string {
 export function ordinalsInscription(id: string): string {
   return `https://ordinals.com/inscription/${id}`;
 }
+
+export function ordinalsContent(id: string): string {
+  return `https://ordinals.com/content/${id}`;
+}
+
+export function ordinalsPreview(id: string): string {
+  return `https://ordinals.com/preview/${id}`;
+}
+
+export function ordinalsAddress(address: string): string {
+  return `https://ordinals.com/address/${address}`;
+}

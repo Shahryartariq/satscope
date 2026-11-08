@@ -57,6 +57,21 @@ Satscope builds the fix as a PSBT for your wallet to sign:
 The flow is tested end to end with a mock Leather wallet that really signs, using the public key from the BIP-322 test
 vectors, with the broadcast intercepted.
 
+## Inscription gallery
+
+The report shows every inscription as it looks, not as a list of IDs. A BRC-20 transfer inscription becomes a token
+card with its ticker and amount, and Satscope adds up the tokens still waiting to be sent, using exact decimal maths.
+Images show as pictures (small ones as crisp pixel art), short text shows as text, and HTML, SVG, video or 3D
+inscriptions play in a sandboxed frame from ordinals.com. Coins in a payment address come first and are outlined,
+because those are the ones a wallet could spend as a fee. Each tile links to its coin in the table and to ordinals.com.
+
+![Inscription gallery of a real wallet holding 13 BRC-20 transfer inscriptions](docs/screenshots/gallery-light.png)
+
+- Details come from ordinals.com's recursive endpoint (`/r/inscription/<id>`) on the server, cached for 30 days because
+  an inscription never changes. The gallery streams in with React Suspense, so the rest of the report doesn't wait.
+- Images load with `<img>`, which can't run scripts. Everything else goes in an `<iframe sandbox="allow-scripts">` on
+  ordinals.com's own origin, and the Content Security Policy allows only that host for frames and images.
+
 ## Features
 
 - **Wallet connect with [LaserEyes](https://github.com/omnisat/lasereyes-mono):** Xverse, UniSat, Leather, Magic Eden,
@@ -81,6 +96,7 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
                           │
                           ├─ mempool.space  (coins, history, fees, price)   ← blockstream.info backup
                           ├─ UniSat Open API (inscriptions and Runes per coin, optional key)
+                          ├─ ordinals.com   (inscription content types and BRC-20 text, for the gallery)
                           │      all cached in the Vercel Runtime Cache
                           ▼
                     src/lib/analyze.ts   pure functions: classify coins → findings → score
@@ -93,6 +109,8 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
   function instances and merges identical requests in flight.
 - `src/lib/budget.ts` keeps usage inside the UniSat free plan and limits each visitor.
 - `src/lib/address.ts` validates mainnet addresses (bech32, bech32m and base58check) in the browser and on the server.
+- `src/lib/inscriptionPreview.ts` decides how each inscription is shown and reads BRC-20 (pure, unit-tested);
+  `src/lib/ordinals.ts` fetches inscription details from ordinals.com.
 - `src/lib/fix.ts` plans fix transactions (pure, unit-tested) and `src/lib/psbt.ts` builds the PSBT, verifies the
   signed result and broadcasts it. bitcoinjs-lib loads only when someone signs.
 - `src/lib/proof.ts` and `src/lib/verify.ts` build, pack and verify ownership proofs with
@@ -104,8 +122,8 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
 Next.js 16 (App Router), React 19, TypeScript (strict), hand-written CSS with design tokens, self-hosted Bricolage
 Grotesque and Martian Mono, LaserEyes, bitcoinjs-lib (PSBTs), bip322-js, Vitest, Playwright with axe-core, GitHub Actions, Vercel.
 
-Security: per-request nonce Content Security Policy, HSTS, no inline styles, no cookies, and addresses are stripped from
-analytics page paths.
+Security: per-request nonce Content Security Policy, HSTS, no inline styles, no cookies. Analytics never see an address:
+report paths are collapsed, query strings dropped and report titles replaced, including on in-app navigation.
 
 ## Run it locally
 

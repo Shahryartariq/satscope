@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { SiteFooter } from "@/components/SiteFooter";
+import { PageViews } from "@/components/PageViews";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -81,8 +82,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               nonce={nonce}
             />
             <Script id="ga" strategy="afterInteractive" nonce={nonce}>
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());var p=location.pathname.replace(/^\/address\/[^/]+/,"/address/:address");gtag("config","${GA_ID}",{page_location:location.origin+p,page_path:p});`}
+              {`window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());var p=location.pathname.replace(/^\/address\/[^/]+/,"/address/:address"),w=/^\/(address\/|wallet$|verify$)/.test(p);gtag("config","${GA_ID}",{page_location:location.origin+p,page_path:p,page_title:w?"Wallet checkup":document.title});`}
             </Script>
+            <PageViews />
           </>
         ) : null}
       </body>

@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * - script-src allows our own scripts plus browser-extension scripts, because
  *   Bitcoin wallets (Xverse, UniSat, Leather, …) inject their providers that way.
  * - connect-src stays open to https: so wallet libraries can reach their own APIs.
+ * - Inscription images and previews load from ordinals.com only.
  */
 export function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -13,10 +14,11 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' chrome-extension: moz-extension: safari-web-extension:${dev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com`,
     `style-src 'self' 'nonce-${nonce}'`,
-    "img-src 'self' data: blob: https://www.googletagmanager.com https://*.google-analytics.com",
+    "img-src 'self' data: blob: https://ordinals.com https://www.googletagmanager.com https://*.google-analytics.com",
     "font-src 'self'",
     "connect-src 'self' https: wss:",
-    "frame-src 'none'",
+    // Inscription previews: ordinals.com's own preview pages, in sandboxed frames.
+    "frame-src https://ordinals.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",
