@@ -67,8 +67,10 @@ because those are the ones a wallet could spend as a fee. Each tile links to its
 
 ![Inscription gallery of a real wallet holding 13 BRC-20 transfer inscriptions](docs/screenshots/gallery-light.png)
 
-- Details come from ordinals.com's recursive endpoint (`/r/inscription/<id>`) on the server, cached for 30 days because
-  an inscription never changes. The gallery streams in with React Suspense, so the rest of the report doesn't wait.
+- The server reads each inscription's content type with a `HEAD` request, and the text of short text inscriptions, from
+  UniSat's content server, falling back to ordinals.com. Results are cached for 30 days because an inscription never
+  changes. ordinals.com's Cloudflare bot check turns away Vercel's servers, which is why it isn't the first source;
+  visitors' browsers load it fine. The gallery streams in with React Suspense, so the rest of the report doesn't wait.
 - Images load with `<img>`, which can't run scripts. Everything else goes in an `<iframe sandbox="allow-scripts">` on
   ordinals.com's own origin, and the Content Security Policy allows only that host for frames and images.
 
@@ -96,7 +98,7 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
                           │
                           ├─ mempool.space  (coins, history, fees, price)   ← blockstream.info backup
                           ├─ UniSat Open API (inscriptions and Runes per coin, optional key)
-                          ├─ ordinals.com   (inscription content types and BRC-20 text, for the gallery)
+                          ├─ static.unisat.io → ordinals.com  (inscription content types and BRC-20 text)
                           │      all cached in the Vercel Runtime Cache
                           ▼
                     src/lib/analyze.ts   pure functions: classify coins → findings → score
@@ -110,7 +112,7 @@ Address or wallet ──► /address/[addr] or /wallet?o=…&p=…   (server com
 - `src/lib/budget.ts` keeps usage inside the UniSat free plan and limits each visitor.
 - `src/lib/address.ts` validates mainnet addresses (bech32, bech32m and base58check) in the browser and on the server.
 - `src/lib/inscriptionPreview.ts` decides how each inscription is shown and reads BRC-20 (pure, unit-tested);
-  `src/lib/ordinals.ts` fetches inscription details from ordinals.com.
+  `src/lib/ordinals.ts` fetches inscription details (UniSat's content server, then ordinals.com).
 - `src/lib/fix.ts` plans fix transactions (pure, unit-tested) and `src/lib/psbt.ts` builds the PSBT, verifies the
   signed result and broadcasts it. bitcoinjs-lib loads only when someone signs.
 - `src/lib/proof.ts` and `src/lib/verify.ts` build, pack and verify ownership proofs with
