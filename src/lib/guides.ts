@@ -39,7 +39,7 @@ export const GUIDES: Guide[] = [
         heading: "Three habits that keep them safe",
         list: [
           "Receive inscriptions only to your Ordinals (Taproot) address, and check the address the sender uses.",
-          "Use an Ordinals-aware wallet for anything that touches inscriptions or Runes; these wallets lock inscribed coins so they aren't used for fees.",
+          "Use an Ordinals-aware wallet for anything that touches inscriptions or Runes. These wallets lock inscribed coins so they aren't used for fees.",
           "Run a Satscope checkup before you send bitcoin from a wallet that has ever held inscriptions. It lists every inscribed coin and warns you if any sits in a payment address.",
         ],
       },
@@ -108,7 +108,7 @@ export const GUIDES: Guide[] = [
       {
         heading: "Why tiny coins appear",
         list: [
-          "Inscription postage: most inscriptions sit on 330 or 546-sat coins. These are not junk; they carry the inscription.",
+          "Inscription postage: most inscriptions sit on 330 or 546-sat coins. These are not junk. They carry the inscription.",
           "Rune transfers, which also use small coins.",
           "Change from payments, and leftover amounts from exchange withdrawals.",
           "Dusting attacks: strangers send tiny amounts hoping you'll spend them together with your other coins, which links your addresses.",
@@ -159,7 +159,7 @@ export const GUIDES: Guide[] = [
         list: [
           "It proves the signer controlled the address at the moment of signing.",
           "It doesn't prove the funds are still there, or that the signer still holds the key. Check the balance separately and ask for a fresh, dated note when it matters.",
-          "Never sign a message someone else wrote unless you understand every word; a signed message can be used as evidence.",
+          "Never sign a message someone else wrote unless you understand every word. A signed message can be used as evidence.",
         ],
       },
     ],

@@ -55,6 +55,17 @@ export function ReportView({ report }: { report: Report }) {
   }
   const spendPct = totals.sats ? totals.spendableSats / totals.sats : 0;
   const usd = (s: number) => formatUsd(s, market.usd);
+  const unconfirmed = report.coins.filter((c) => !c.confirmed).length;
+  const hasFixes = report.scored && report.coins.length > 0;
+  const sections: [string, string][] = [
+    ["findings-title", "Findings"],
+    ...(hasFixes ? ([["fix-title", "Fixes"]] as [string, string][]) : []),
+    ...(report.coins.length ? ([["map-title", "Coin map"]] as [string, string][]) : []),
+    ...(inscribed.length ? ([["ins-title", "Inscriptions"]] as [string, string][]) : []),
+    ...(runeTotals.size ? ([["runes-title", "Runes"]] as [string, string][]) : []),
+    ...(report.coins.length ? ([["coins-title", "All coins"]] as [string, string][]) : []),
+    ["fees-title", "Fees"],
+  ];
 
   return (
     <>
@@ -76,6 +87,13 @@ export function ReportView({ report }: { report: Report }) {
             </a>
           </div>
         ))}
+        <nav className="jump" aria-label="Report sections">
+          {sections.map(([id, label]) => (
+            <a key={id} href={`#${id}`}>
+              {label}
+            </a>
+          ))}
+        </nav>
       </section>
 
       <div className="wrap report-body">
@@ -106,7 +124,7 @@ export function ReportView({ report }: { report: Report }) {
               Totals
             </h2>
             <dl className="totals">
-              <div className="total">
+              <div className="total total-balance">
                 <dt>Balance</dt>
                 <dd>
                   {formatBtc(totals.sats)}
@@ -117,29 +135,29 @@ export function ReportView({ report }: { report: Report }) {
                 <dt>Coins</dt>
                 <dd>
                   {report.scored ? totals.coins.toLocaleString("en-US") : "Too many"}
-                  <small>{report.scored ? "unspent outputs" : "to list one by one"}</small>
+                  {!report.scored ? (
+                    <small>to list one by one</small>
+                  ) : unconfirmed ? (
+                    <small>{unconfirmed} unconfirmed</small>
+                  ) : null}
                 </dd>
               </div>
               <div className="total">
                 <dt>Inscriptions</dt>
                 <dd>
                   {report.indexed || totals.inscriptions ? totals.inscriptions.toLocaleString("en-US") : "Not checked"}
-                  <small>
-                    {inscribed.length
-                      ? formatCount(inscribed.length, "coin")
-                      : report.indexed
-                        ? "none found"
-                        : "index unavailable"}
-                  </small>
+                  {!report.indexed && !totals.inscriptions ? (
+                    <small>index unavailable</small>
+                  ) : inscribed.length && inscribed.length !== totals.inscriptions ? (
+                    <small>on {formatCount(inscribed.length, "coin")}</small>
+                  ) : null}
                 </dd>
               </div>
               <div className="total">
                 <dt>Runes</dt>
                 <dd>
                   {report.indexed || totals.runeKinds ? totals.runeKinds.toLocaleString("en-US") : "Not checked"}
-                  <small>
-                    {totals.runeKinds ? "different tokens" : report.indexed ? "none found" : "index unavailable"}
-                  </small>
+                  {!report.indexed && !totals.runeKinds ? <small>index unavailable</small> : null}
                 </dd>
               </div>
             </dl>
@@ -181,7 +199,7 @@ export function ReportView({ report }: { report: Report }) {
           <Findings findings={report.findings} multiAddress={multi} />
         </section>
 
-        {report.scored && report.coins.length > 0 ? (
+        {hasFixes ? (
           <FixPanel
             addresses={report.addresses.map((a) => ({
               address: a.address,
@@ -286,45 +304,6 @@ export function ReportView({ report }: { report: Report }) {
           </section>
         ) : null}
 
-        {report.consolidation ? (
-          <section className="panel" aria-labelledby="merge-title">
-            <div className="panel-title">
-              <h2 id="merge-title">Merging your spendable coins</h2>
-              <p>Estimate, not advice</p>
-            </div>
-            <dl className="totals">
-              <div className="total">
-                <dt>Coins to merge</dt>
-                <dd>
-                  {report.consolidation.coinCount}
-                  <small>{formatBtc(report.consolidation.totalSats)}</small>
-                </dd>
-              </div>
-              <div className="total">
-                <dt>Size</dt>
-                <dd>
-                  {report.consolidation.vbytes.toLocaleString("en-US")} vB
-                  <small>one transaction</small>
-                </dd>
-              </div>
-              <div className="total">
-                <dt>Fee today</dt>
-                <dd>
-                  {formatSats(report.consolidation.costNow)}
-                  <small>at {formatRate(report.consolidation.rateNow)}</small>
-                </dd>
-              </div>
-              <div className="total">
-                <dt>Fee on a busy day</dt>
-                <dd>
-                  {formatSats(report.consolidation.costBusy)}
-                  <small>at {formatRate(report.consolidation.rateBusy)}</small>
-                </dd>
-              </div>
-            </dl>
-          </section>
-        ) : null}
-
         {report.coins.length > 0 ? (
           <section className="panel" aria-labelledby="coins-title">
             <div className="panel-title">
@@ -342,10 +321,10 @@ export function ReportView({ report }: { report: Report }) {
                     <th scope="col">Coin</th>
                     <th scope="col">Holds</th>
                     <th scope="col" className="num">
-                      Value
+                      Value (sats)
                     </th>
                     <th scope="col" className="num">
-                      Fee to spend
+                      Fee to spend (sats)
                     </th>
                     <th scope="col">Received</th>
                     {multi ? <th scope="col">Address</th> : null}

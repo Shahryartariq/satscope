@@ -1983,3 +1983,184 @@ fieldset {
   margin-top: 6px;
   font-size: 14px;
 }
+
+/* ---------- Breathing room (UX audit, Nov 2026) ---------- */
+
+/* Anchor jumps land below the sticky header. */
+html {
+  scroll-padding-top: 88px;
+}
+
+@media (max-width: 760px) {
+  html {
+    scroll-padding-top: 120px;
+  }
+}
+
+.examples {
+  margin-top: 14px;
+}
+
+.report-head {
+  padding-bottom: 32px;
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.jump a {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.jump a:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.report-body > * + * {
+  margin-top: 32px;
+}
+
+.summary-grid {
+  gap: 24px;
+}
+
+.panel {
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.panel-title {
+  margin-bottom: 24px;
+}
+
+.findings {
+  gap: 16px;
+}
+
+.finding {
+  padding: 18px 22px;
+}
+
+.finding p {
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.finding details {
+  margin-top: 14px;
+}
+
+.totals {
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  gap: 24px 32px;
+}
+
+.total dd {
+  font-size: clamp(22px, 2.2vw, 26px);
+}
+
+.total-balance dd {
+  white-space: nowrap;
+}
+
+.split-bar {
+  margin-top: 28px;
+}
+
+.score .muted a {
+  color: var(--ink-2);
+}
+
+/* Below this width the score and the totals stack, so the balance has room. */
+@media (max-width: 1040px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .score {
+    grid-template-columns: 112px 1fr;
+    justify-items: start;
+    align-items: center;
+    text-align: left;
+    gap: 18px;
+  }
+  .score svg {
+    width: 112px;
+    height: 112px;
+  }
+}
+
+@media (max-width: 560px) {
+  .totals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px 16px;
+  }
+  .panel-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .total-balance {
+    grid-column: 1 / -1;
+  }
+}
+
+.ins-more {
+  margin-top: 16px;
+}
+
+.ins-more > summary {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ins-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ins-more[open] > summary {
+  margin-bottom: 16px;
+}
+
+.ins-more > summary:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.mobile-nav {
+  justify-content: flex-start;
+}
+
+.summary-grid > .panel {
+  display: grid;
+  align-content: center;
+}
+
+/* Four tiles a row on desktop, so the first 8 fill two full rows. */
+.ins-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+@media (max-width: 480px) {
+  .ins-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

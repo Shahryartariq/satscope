@@ -13,7 +13,11 @@ test.describe("inscription gallery", () => {
     const gallery = page.locator(".gallery");
     await expect(gallery.getByRole("heading", { name: "Inscriptions" })).toBeVisible();
     const tiles = gallery.locator(".ins-tile");
+    // The first 8 show straight away; the rest sit behind "Show 5 more".
+    await expect(tiles.filter({ visible: true })).toHaveCount(8);
+    await gallery.getByText("Show 5 more").click();
     await expect(tiles).toHaveCount(13);
+    await expect(tiles.filter({ visible: true })).toHaveCount(13);
     await expect(tiles.locator(".brc20")).toHaveCount(13);
     // Real inscription #126,063,442 holds 10,000,000,000 𝛑.
     const tile = tiles.filter({ hasText: "#126,063,442" });

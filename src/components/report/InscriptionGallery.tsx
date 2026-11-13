@@ -12,8 +12,10 @@ import { getInscriptionMeta } from "@/lib/ordinals";
 import { ordinalsAddress, ordinalsContent, ordinalsInscription, ordinalsPreview } from "@/lib/site";
 import { coinAnchor } from "./Findings";
 
-/** Tiles drawn per report. Each needs one lookup on ordinals.com (cached for 30 days). */
+/** Tiles drawn per report. Each needs one lookup on UniSat's content server (cached for 30 days). */
 export const GALLERY_LIMIT = 24;
+/** Tiles shown before "Show more", so a big collection doesn't push the rest of the report far down. */
+export const GALLERY_FIRST = 8;
 
 export interface GalleryItem {
   id: string;
@@ -152,10 +154,20 @@ async function LoadedGrid({ items, total }: { items: GalleryItem[]; total: numbe
         </div>
       ) : null}
       <ul className="ins-grid" data-state="loaded">
-        {items.map((item, i) => (
+        {items.slice(0, GALLERY_FIRST).map((item, i) => (
           <Tile key={item.id} item={item} meta={metas[i]!} />
         ))}
       </ul>
+      {items.length > GALLERY_FIRST ? (
+        <details className="ins-more">
+          <summary>Show {items.length - GALLERY_FIRST} more</summary>
+          <ul className="ins-grid">
+            {items.slice(GALLERY_FIRST).map((item, i) => (
+              <Tile key={item.id} item={item} meta={metas[i + GALLERY_FIRST]!} />
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </>
   );
 }
@@ -163,7 +175,7 @@ async function LoadedGrid({ items, total }: { items: GalleryItem[]; total: numbe
 function LoadingGrid({ items }: { items: GalleryItem[] }) {
   return (
     <ul className="ins-grid" data-state="loading" aria-busy="true">
-      {items.map((item) => (
+      {items.slice(0, GALLERY_FIRST).map((item) => (
         <Tile key={item.id} item={item} meta={null} loading />
       ))}
     </ul>

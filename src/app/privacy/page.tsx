@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "What Satscope collects (very little) and what it never stores.",
+  description:
+    "What Satscope collects when you check a wallet, what other services see, and what it never stores. No accounts, no database, no cookies of its own.",
   alternates: { canonical: "/privacy" },
 };
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Report } from "@/lib/types";
 
 const VERDICT: Record<Report["grade"], string> = {
@@ -38,7 +39,9 @@ export function ScoreDial({ score, grade }: { score: number; grade: Report["grad
       </svg>
       <div>
         <h2 className="score-verdict">{VERDICT[grade]}</h2>
-        <p className="muted">Health score from the findings below.</p>
+        <p className="muted">
+          <Link href="/about#score">How the score works</Link>
+        </p>
       </div>
     </div>
   );

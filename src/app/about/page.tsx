@@ -40,7 +40,7 @@ export default function AboutPage() {
         </li>
       </ul>
 
-      <h2>The health score</h2>
+      <h2 id="score">The health score</h2>
       <p>
         Every check that finds something has a weight: high-risk findings take 30 points off, medium 15, low 6. Notes,
         such as unconfirmed coins, take nothing off. The score starts at 100 and the grade follows it: A from 90, B from
@@ -50,7 +50,10 @@ export default function AboutPage() {
 
       <h2>What Satscope never does</h2>
       <ul>
-        <li>It never asks you to sign a transaction or send funds.</li>
+        <li>
+          It never moves bitcoin on its own. A fix is sent only after you review it, sign it in your wallet and press
+          Send.
+        </li>
         <li>It never sees your seed phrase or private keys.</li>
         <li>
           It doesn&apos;t keep a record of the addresses you check. Results are cached for a few minutes, then dropped.

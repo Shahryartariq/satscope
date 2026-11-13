@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const DEFAULT = "Point at a coin, or tab to it, to see what it holds.";
+const DEFAULT = "Hover over a coin, or tab to it, to see what it holds.";
 
 /** Shows the data-label of whichever coin the pointer or keyboard focus is on. */
 export function HoverLabel({ id }: { id: string }) {
