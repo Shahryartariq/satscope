@@ -89,7 +89,7 @@ export function CoinMap({ coins, width = 960, animate = true, title, idPrefix = 
       </svg>
       {hidden > 0 ? (
         <p className="hover-label">
-          Showing {placed.length} coins here; the other {hidden} are listed in the table below.
+          Showing {placed.length} coins here. The other {hidden} are in the table below.
         </p>
       ) : null}
       <HoverLabel id={labelId} />

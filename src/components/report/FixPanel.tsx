@@ -321,7 +321,7 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
             {stage.kind === "move"
               ? "Your inscriptions and Runes are on their way to your Ordinals address."
               : "Your coins are being merged."}{" "}
-            It confirms in the next blocks; run the checkup again after that.
+            It confirms in the next few blocks. Run the checkup again after that.
           </p>
           <div className="actions-row">
             <a className="btn btn-primary" href={mempoolTx(stage.txid)} target="_blank" rel="noopener noreferrer">
@@ -347,7 +347,7 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
         open={pending !== null}
         onClose={() => setPending(null)}
         onConnected={onConnected}
-        note="Satscope builds the transaction and shows you every coin first. Your wallet signs it; nothing is sent until you press Send."
+        note="Satscope builds the transaction and shows you every coin first. Your wallet signs it, and nothing is sent until you press Send."
       />
     </section>
   );

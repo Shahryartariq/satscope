@@ -55,7 +55,7 @@ test.describe("home", () => {
     await page.goto("/");
     await page.getByRole("link", { name: /bc1pcs8f/ }).click();
     await expect(page).toHaveURL(new RegExp(COLLECTOR));
-    await expect(page.getByText("13 coins").first()).toBeVisible();
+    await expect(page.locator(".total").filter({ hasText: "Inscriptions" }).locator("dd")).toHaveText("13");
   });
 });
 
@@ -80,7 +80,10 @@ test.describe("reports", () => {
     await expect(page.locator(href!)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Runes", exact: true })).toBeVisible();
     await expect(page.getByText("DOG•GO•TO•THE•MOON").first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Merging your spendable coins" })).toBeVisible();
+    await expect(page.locator(".finding").filter({ hasText: "could be merged" })).toBeVisible();
+    // The section bar jumps to each part of the report.
+    await page.getByRole("navigation", { name: "Report sections" }).getByRole("link", { name: "All coins" }).click();
+    await expect(page).toHaveURL(/#coins-title$/);
     expect(errors).toEqual([]);
   });
 
@@ -172,12 +175,18 @@ test.describe("site", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /^https?:\/\/[^/]+\/?$/);
     expect(await page.locator('script[type="application/ld+json"]').count()).toBeGreaterThan(0);
     const robots = await (await request.get("/robots.txt")).text();
-    expect(robots).toContain("Disallow: /address/");
+    expect(robots).toContain("Disallow: /api/");
+    expect(robots).not.toContain("Disallow: /address/");
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain("/learn/protect-inscriptions");
     expect(sitemap).not.toContain("/address/");
     await page.goto(`/address/${SMALL}`);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    // Pages without their own canonical must not claim to be the home page.
+    await page.goto("/wallet");
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+    await page.goto("/no-such-page");
+    await expect(page).toHaveTitle(/^Page not found/);
     expect((await request.get("/opengraph-image")).headers()["content-type"]).toContain("image/png");
   });
 

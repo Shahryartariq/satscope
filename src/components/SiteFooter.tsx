@@ -7,8 +7,8 @@ export function SiteFooter() {
       <div className="wrap">
         <div className="about">
           <p>
-            <strong>Satscope</strong> is a free, read-only Bitcoin wallet checkup. It never asks you to send funds or
-            sign a transaction, and nothing about your wallet is stored.
+            <strong>Satscope</strong> is a free Bitcoin wallet checkup. It reads public blockchain data and stores
+            nothing about your wallet. Nothing moves unless you sign it in your own wallet.
           </p>
           <p className="muted">
             Not financial advice. Built by <a href={AUTHOR.url}>{AUTHOR.name}</a>, open source on{" "}

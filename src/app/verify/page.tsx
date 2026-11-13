@@ -124,8 +124,8 @@ export default async function VerifyPage({ searchParams }: Props) {
         </p>
       ) : null}
 
-      <h2>{proof ? "Check another signature" : "Paste the details"}</h2>
-      <p>
+      {proof ? <h2>Check another signature</h2> : null}
+      <p className={proof ? undefined : "lede"}>
         Works with BIP-322 signatures from Xverse, UniSat, Leather and other Ordinals wallets, and with classic
         &quot;signed message&quot; signatures from Electrum, Sparrow and Bitcoin Core.
       </p>

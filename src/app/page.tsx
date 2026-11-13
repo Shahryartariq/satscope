@@ -14,7 +14,7 @@ export const metadata = {
 const FAQ = [
   {
     q: "Is Satscope safe to connect to my wallet?",
-    a: "Connecting only shares your public addresses, the same ones you'd give someone to pay you. Satscope never asks you to sign a transaction or send funds. The only thing it will ever ask you to sign is the ownership message on the Prove page, and only when you click that button.",
+    a: "Connecting shares only your public addresses, the same ones you'd give someone to pay you. Satscope asks your wallet to sign in two places, and only when you click: the ownership message on the Prove page, and a fix you have reviewed coin by coin. Nothing is sent until you press Send.",
   },
   {
     q: "Why would my wallet spend an inscription?",
@@ -159,7 +159,7 @@ export default async function Home() {
             <h1>Know what&apos;s in your Bitcoin wallet before you spend from it.</h1>
             <p className="lede">
               Satscope checks any address for bitcoin, Ordinals inscriptions and Runes. It warns you when a payment
-              could burn an inscription and shows what your coins cost to move. Free, read-only, no sign-up.
+              could burn an inscription and shows what your coins cost to move. Free, no sign-up.
             </p>
             <CheckForm />
             <p className="examples">

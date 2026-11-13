@@ -35,7 +35,6 @@ export const metadata: Metadata = {
   title: { default: `${SITE_NAME}: ${SITE_TAGLINE} for BTC, Ordinals and Runes`, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,

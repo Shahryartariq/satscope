@@ -169,7 +169,7 @@ export function ProveFlow() {
           setWhich("address");
           setOpen(false);
         }}
-        note="Satscope will ask your wallet to sign one plain-text message. It never asks you to sign a transaction."
+        note="Satscope will ask your wallet to sign one plain-text message. No transaction, no fee."
       />
     </ol>
   );

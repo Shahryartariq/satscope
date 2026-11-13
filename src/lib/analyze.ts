@@ -84,7 +84,7 @@ export function findingsFor(snap: AddressSnapshot, coins: ClassifiedCoin[], mark
       detail:
         snap.role === "payment"
           ? "Your wallet uses this address to pay for things. When it picks coins for a payment or a fee, it can pick these and the inscriptions are gone for good."
-          : `${ADDRESS_TYPE_LABEL[snap.type]} addresses are normally used for spending, so many wallets will happily use these coins to pay fees.`,
+          : `${ADDRESS_TYPE_LABEL[snap.type]} addresses are normally used for spending, so many wallets will use these coins to pay fees.`,
       action:
         "Move them to a Taproot (bc1p) Ordinals address with an Ordinals-aware wallet before you send any bitcoin from here.",
       address: snap.address,
@@ -112,7 +112,7 @@ export function findingsFor(snap: AddressSnapshot, coins: ClassifiedCoin[], mark
       id: "heavy-inscriptions",
       severity: "medium",
       title: `About ${formatSats(extra)} locked up with inscriptions`,
-      detail: `${heavy.length === 1 ? "1 coin holds" : `${heavy.length} coins hold`} an inscription and far more bitcoin than it needs. Send the inscription and all of those sats go with it; most wallets also refuse to spend them, so they don't count as spendable.`,
+      detail: `${heavy.length === 1 ? "1 coin holds" : `${heavy.length} coins hold`} an inscription and far more bitcoin than it needs. Send the inscription and all of those sats go with it. Most wallets also refuse to spend them, so they don't count as spendable.`,
       action: 'Use an Ordinals wallet that can split off the extra sats (often called "extract" or "split UTXO").',
       address: snap.address,
       coins: ops(heavy),
