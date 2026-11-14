@@ -1,0 +1,25 @@
+name: Live site check
+
+# Production settings like the GA id, Search Console token and UniSat key only
+# show up on the live site, so they are checked there: after every successful
+# production deploy, and once a day.
+on:
+  deployment_status:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/smoke.mjs https://satscope.vercel.app

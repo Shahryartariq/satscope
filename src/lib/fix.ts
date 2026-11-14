@@ -55,6 +55,21 @@ export type PlanResult = { ok: true; plan: FixPlan } | { ok: false; reason: stri
 
 /** Wallets and nodes relay 1 sat/vB everywhere; going lower risks a stuck transaction. */
 export const MIN_FEE_RATE = 1;
+/**
+ * Above this, the fee feed is almost certainly wrong (the 2023 peak was about
+ * 500 sat/vB for a few blocks). Satscope refuses to build a fix rather than
+ * hand the wallet a transaction that burns most of its value in fees.
+ */
+export const MAX_FEE_RATE = 500;
+
+function feeRateProblem(feeRate: number): PlanResult | null {
+  if (!Number.isFinite(feeRate) || feeRate > MAX_FEE_RATE)
+    return {
+      ok: false,
+      reason: `Fee rates look wrong right now (${feeRate} sat/vB). Satscope won't build a fix until they settle.`,
+    };
+  return null;
+}
 export const MAX_MOVE_COINS = 20;
 export const MAX_MERGE_COINS = 200;
 export const MIN_MERGE_COINS = 3;
@@ -107,6 +122,8 @@ export function planMove(opts: {
 }): PlanResult {
   const { coins, from, to, indexed } = opts;
   const feeRate = effectiveRate(opts.feeRate);
+  const badRate = feeRateProblem(feeRate);
+  if (badRate) return badRate;
   const fromType = parseAddress(from);
   const toType = parseAddress(to);
   if (!fromType || !toType) return { ok: false, reason: "One of the addresses isn't a valid Bitcoin address." };
@@ -169,6 +186,8 @@ export function planMove(opts: {
 export function planMerge(opts: { coins: FixCoin[]; address: string; feeRate: number; indexed: boolean }): PlanResult {
   const { coins, address, indexed } = opts;
   const feeRate = effectiveRate(opts.feeRate);
+  const badRate = feeRateProblem(feeRate);
+  if (badRate) return badRate;
   const type = parseAddress(address);
   if (!type) return { ok: false, reason: "That isn't a valid Bitcoin address." };
   if (!SPENDABLE_TYPES.includes(type)) {

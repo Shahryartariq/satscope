@@ -7,15 +7,28 @@
 const DAY_MS = 86_400_000;
 const DAILY_UNITS = Number(process.env.UNISAT_DAILY_BUDGET || 900);
 
+/**
+ * No visitor may use more than this share of the daily budget, so one person
+ * cycling through big wallets can't switch the Ordinals index off for everyone.
+ */
+const VISITOR_DAILY_UNITS = Number(process.env.SATSCOPE_VISITOR_UNITS || 150);
+
 let dayStart = Date.now();
 let used = 0;
+const usedBy = new Map<string, number>();
 
-export function spendUnits(units: number, now = Date.now()): boolean {
+export function spendUnits(units: number, visitor?: string, now = Date.now()): boolean {
   if (now - dayStart >= DAY_MS) {
     dayStart = now;
     used = 0;
+    usedBy.clear();
   }
   if (used + units > DAILY_UNITS) return false;
+  if (visitor) {
+    const mine = usedBy.get(visitor) ?? 0;
+    if (mine + units > VISITOR_DAILY_UNITS) return false;
+    usedBy.set(visitor, mine + units);
+  }
   used += units;
   return true;
 }
@@ -43,5 +56,6 @@ export function allowVisitor(id: string, now = Date.now(), limit = VISITOR_LIMIT
 export function resetBudgetsForTests(): void {
   dayStart = Date.now();
   used = 0;
+  usedBy.clear();
   hits.clear();
 }

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { GUIDES } from "@/lib/guides";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Bitcoin wallet guides",
   description: "Short, practical guides to Ordinals safety, UTXO consolidation, dust and proving address ownership.",
-  alternates: { canonical: "/learn" },
-};
+  path: "/learn",
+});
 
 export default function LearnPage() {
   return (

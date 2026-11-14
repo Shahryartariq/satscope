@@ -51,6 +51,13 @@ test.describe("home", () => {
     expect(errors).toEqual([]);
   });
 
+  test("accepts a bitcoin: payment link", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("#address").fill(`bitcoin:${PAYMENT}?amount=0.01`);
+    await page.locator("main form button[type=submit]").first().click();
+    await expect(page).toHaveURL(new RegExp(`/address/${PAYMENT}$`));
+  });
+
   test("example link opens a real wallet report", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: /bc1pcs8f/ }).click();
@@ -95,7 +102,7 @@ test.describe("reports", () => {
 
   test("is honest when Ordinals data is missing", async ({ page }) => {
     await page.goto(`/address/${LEGACY}`);
-    await expect(page.getByRole("status").filter({ hasText: "weren't checked" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "weren't fully checked" })).toBeVisible();
     await expect(page.getByText("Legacy address", { exact: true })).toBeVisible();
     await expect(page.getByText("Check first (likely inscription postage)").first()).toBeVisible();
   });
@@ -103,6 +110,26 @@ test.describe("reports", () => {
   test("rejects a bad address", async ({ page }) => {
     await page.goto("/address/bc1qnotarealaddress");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("That address isn't recognised");
+    // The page never repeats what was in the URL.
+    await expect(page.locator("main")).not.toContainText("notarealaddress");
+  });
+
+  test("handles odd address URLs without an error page", async ({ page }) => {
+    const broken = await page.goto("/address/%E0%A4%A");
+    expect(broken?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("That address isn't recognised");
+    // Upper-case bech32 and "bitcoin:" links land on the one clean URL.
+    await page.goto(`/address/${PAYMENT.toUpperCase()}`);
+    await expect(page).toHaveURL(new RegExp(`/address/${PAYMENT}$`));
+    await page.goto(`/address/bitcoin:${PAYMENT}`);
+    await expect(page).toHaveURL(new RegExp(`/address/${PAYMENT}$`));
+    await page.goto("/wallet?o=nonsense");
+    await expect(page.getByRole("heading", { name: "That address isn't recognised" })).toBeVisible();
+  });
+
+  test("an empty address gets no score", async ({ page }) => {
+    await page.goto("/address/bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
+    await expect(page.getByRole("heading", { name: "Nothing to score" })).toBeVisible();
   });
 
   test("finding coin lists jump to the coin table", async ({ page }) => {
@@ -123,6 +150,9 @@ test.describe("proofs", () => {
     await page.getByRole("button", { name: "Verify signature" }).click();
     await expect(page.getByText("Signature is valid")).toBeVisible();
     await expect(page.getByRole("button", { name: "Copy proof link" })).toBeVisible();
+    // "Hello World" isn't a Satscope proof, so it's shown as a plain signed message, in full.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Signed message");
+    await expect(page.locator(".proof-facts")).toContainText("Hello World");
   });
 
   test("rejects a changed message", async ({ page }) => {
@@ -188,6 +218,18 @@ test.describe("site", () => {
     await page.goto("/no-such-page");
     await expect(page).toHaveTitle(/^Page not found/);
     expect((await request.get("/opengraph-image")).headers()["content-type"]).toContain("image/png");
+    await page.goto("/learn/no-such-guide");
+    await expect(page).toHaveTitle(/^Page not found/);
+    // Every page shares its own title, URL and image, not the home page's.
+    for (const path of ["/about", "/privacy", "/prove", "/learn", "/learn/bitcoin-dust"]) {
+      await page.goto(path);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", new RegExp(`${path}$`));
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+      await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", await page.title());
+    }
+    const guide = await page.locator('script[type="application/ld+json"]').first().textContent();
+    expect(guide).toContain('"datePublished"');
+    expect(guide).toContain('"BreadcrumbList"');
   });
 
   test("guides render", async ({ page }) => {

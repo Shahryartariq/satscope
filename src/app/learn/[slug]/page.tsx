@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { pageMetadata, SHARE_IMAGE } from "@/lib/seo";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GUIDES, getGuide } from "@/lib/guides";
-import { AUTHOR, absoluteUrl } from "@/lib/site";
+import { GUIDES, GUIDES_PUBLISHED, getGuide } from "@/lib/guides";
+import { AUTHOR, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -15,28 +16,45 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const g = getGuide((await params).slug);
-  if (!g) return {};
-  return {
+  if (!g) return { title: "Page not found", robots: { index: false, follow: true } };
+  return pageMetadata({
     title: g.title,
     description: g.description,
-    alternates: { canonical: `/learn/${g.slug}` },
-    openGraph: { type: "article", title: g.title, description: g.description, url: `/learn/${g.slug}` },
-  };
+    path: `/learn/${g.slug}`,
+    type: "article",
+    published: GUIDES_PUBLISHED,
+    modified: g.updated,
+  });
 }
 
 export default async function GuidePage({ params }: Props) {
   const g = getGuide((await params).slug);
   if (!g) notFound();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: g.title,
-    description: g.description,
-    dateModified: g.updated,
-    author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url },
-    mainEntityOfPage: absoluteUrl(`/learn/${g.slug}`),
-  };
+  const url = absoluteUrl(`/learn/${g.slug}`);
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: g.title,
+      description: g.description,
+      datePublished: GUIDES_PUBLISHED,
+      dateModified: g.updated,
+      image: absoluteUrl(SHARE_IMAGE.url),
+      author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url },
+      publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      mainEntityOfPage: url,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: SITE_NAME, item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Guides", item: absoluteUrl("/learn") },
+        { "@type": "ListItem", position: 3, name: g.title, item: url },
+      ],
+    },
+  ];
   const others = GUIDES.filter((o) => o.slug !== g.slug);
   return (
     <article className="wrap prose">

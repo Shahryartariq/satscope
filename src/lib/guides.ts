@@ -4,6 +4,9 @@ export interface GuideSection {
   list?: string[];
 }
 
+/** All four guides went live with the site on this day. */
+export const GUIDES_PUBLISHED = "2026-11-06";
+
 export interface Guide {
   slug: string;
   title: string;

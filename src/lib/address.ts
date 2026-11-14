@@ -122,8 +122,20 @@ export function parseAddress(input: string): AddressType | null {
 
 /** Bech32 addresses are case-insensitive; store them lowercase so cache keys and links match. */
 export function normalizeAddress(input: string): string {
-  const addr = input.trim();
+  let addr = input.trim();
+  // Wallets often copy a BIP-21 payment link ("bitcoin:bc1q…?amount=0.1") instead of the bare address.
+  const uri = /^bitcoin:([^?#]*)/i.exec(addr);
+  if (uri) addr = uri[1]!.trim();
   return /^bc1/i.test(addr) ? addr.toLowerCase() : addr;
+}
+
+/** decodeURIComponent that returns the input unchanged when the escapes are broken ("%E0%A4%A"). */
+export function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 export function looksLikeTestnet(input: string): boolean {
