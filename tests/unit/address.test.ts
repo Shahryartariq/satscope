@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { looksLikeTestnet, normalizeAddress, parseAddress, shortAddress } from "@/lib/address";
+import { looksLikeTestnet, normalizeAddress, parseAddress, safeDecode, shortAddress } from "@/lib/address";
 
 describe("parseAddress", () => {
   it.each([
@@ -48,5 +48,19 @@ describe("helpers", () => {
   it("shortens long addresses", () => {
     expect(shortAddress("bc1q9vza2e8x573nczrlzms0wvx3gsqjx7vavgkx0l")).toBe("bc1q9v…vgkx0l");
     expect(shortAddress("short")).toBe("short");
+  });
+});
+
+describe("pasted input", () => {
+  it("accepts BIP-21 payment links that wallets copy", () => {
+    const addr = "bc1q80z72mugw2g52utqgd5y9audpae4ghp8atmthm";
+    expect(normalizeAddress(`bitcoin:${addr}?amount=0.1&label=Shop`)).toBe(addr);
+    expect(normalizeAddress(`  BITCOIN:${addr.toUpperCase()}  `)).toBe(addr);
+    expect(parseAddress(normalizeAddress(`bitcoin:${addr}`))).toBe("p2wpkh");
+  });
+
+  it("survives broken percent escapes in a URL", () => {
+    expect(safeDecode("%E0%A4%A")).toBe("%E0%A4%A");
+    expect(safeDecode("bc1q%20x")).toBe("bc1q x");
   });
 });

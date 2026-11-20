@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { shortAddress } from "@/lib/address";
 import {
   atRiskCoins,
@@ -61,6 +62,37 @@ type Stage =
   | { name: "sending"; plan: FixPlan; txid: string }
   | { name: "done"; txid: string; kind: Candidate["kind"] };
 
+/**
+ * Coins spent by a fix sent from this tab. The report is cached for a minute and
+ * mempool data lags, so without this the same fix could be offered again for
+ * coins that are already on their way. Entries expire after six hours, or as
+ * soon as the coin drops out of the report.
+ */
+const SENT_KEY = "satscope:sent";
+const SENT_TTL = 6 * 3600 * 1000;
+
+const outpointOf = (c: { txid: string; vout: number }) => `${c.txid}:${c.vout}`;
+
+function readSent(): Record<string, number> {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(SENT_KEY) ?? "{}") as Record<string, number>;
+    const now = Date.now();
+    return Object.fromEntries(Object.entries(raw).filter(([, at]) => typeof at === "number" && now - at < SENT_TTL));
+  } catch {
+    return {};
+  }
+}
+
+function rememberSent(outpoints: string[]) {
+  try {
+    const sent = readSent();
+    for (const o of outpoints) sent[o] = Date.now();
+    sessionStorage.setItem(SENT_KEY, JSON.stringify(sent));
+  } catch {
+    // Storage blocked: the fix still went out, the panel just can't hide its coins.
+  }
+}
+
 function candidatesFor(addresses: FixAddress[], coins: FixCoin[], rate: number): Candidate[] {
   const out: Candidate[] = [];
   const ordinals = addresses.find((a) => a.role === "ordinals");
@@ -109,7 +141,14 @@ function blurb(c: Candidate): string {
   return "Sends each coin whole, so every inscription keeps its place. Fees come from plain bitcoin in the same address.";
 }
 
-export function FixPanel({ addresses, coins, fees, usd }: Props) {
+export function FixPanel({ addresses, coins: allCoins, fees, usd }: Props) {
+  const router = useRouter();
+  const [sent, setSent] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    setSent(new Set(Object.keys(readSent())));
+  }, []);
+  const coins = useMemo(() => allCoins.filter((c) => !sent.has(outpointOf(c))), [allCoins, sent]);
+  const waiting = allCoins.length - coins.length;
   const [speed, setSpeed] = useState<Speed>("halfHour");
   const [stage, setStage] = useState<Stage>({ name: "idle" });
   const [pending, setPending] = useState<Candidate | null>(null);
@@ -202,6 +241,9 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
     try {
       const { broadcast } = await import("@/lib/psbt");
       const txid = await broadcast(s.txHex);
+      const spent = s.plan.inputs.map(outpointOf);
+      rememberSent(spent);
+      setSent((prev) => new Set([...prev, ...spent]));
       setStage({ name: "done", txid, kind: s.candidate.kind });
       void disconnectWallet();
       setWallet(null);
@@ -224,10 +266,18 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
         <div className="panel-title">
           <h2 id="fix-title">Fix it with your wallet</h2>
         </div>
+        {waiting > 0 ? (
+          <p className="fix-waiting" role="status">
+            A fix you sent is waiting to confirm. Its {formatCount(waiting, "coin")} {waiting === 1 ? "is" : "are"} left
+            out until then.
+          </p>
+        ) : null}
         <p className="muted">
-          {indexedEverywhere
-            ? "Nothing here needs a transaction. When inscriptions sit in a payment address or plain coins pile up, Satscope can build the fix for your wallet to sign."
-            : "Fixes need the Ordinals index, so they're switched off until it answers. Check again in a little while."}
+          {waiting > 0
+            ? "Run the checkup again once it confirms."
+            : indexedEverywhere
+              ? "Nothing here needs a transaction. When inscriptions sit in a payment address or plain coins pile up, Satscope can build the fix for your wallet to sign."
+              : "Fixes need the Ordinals index, so they're switched off until it answers. Check again in a little while."}
         </p>
       </section>
     );
@@ -239,6 +289,16 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
         <h2 id="fix-title">Fix it with your wallet</h2>
         <p>You review every coin, your wallet signs</p>
       </div>
+      {stage.name === "idle" ? (
+        <>
+          {waiting > 0 ? (
+            <p className="fix-waiting" role="status">
+              A fix you sent is waiting to confirm. Its {formatCount(waiting, "coin")} {waiting === 1 ? "is" : "are"}{" "}
+              left out until then.
+            </p>
+          ) : null}
+        </>
+      ) : null}
 
       {stage.name === "idle" ? (
         <ul className="fix-list">
@@ -321,12 +381,15 @@ export function FixPanel({ addresses, coins, fees, usd }: Props) {
             {stage.kind === "move"
               ? "Your inscriptions and Runes are on their way to your Ordinals address."
               : "Your coins are being merged."}{" "}
-            It confirms in the next few blocks. Run the checkup again after that.
+            It confirms in the next few blocks. Until then, the coins it spends are left out of new fixes.
           </p>
           <div className="actions-row">
             <a className="btn btn-primary" href={mempoolTx(stage.txid)} target="_blank" rel="noopener noreferrer">
               Track it on mempool.space
             </a>
+            <button type="button" className="btn btn-quiet" onClick={() => router.refresh()}>
+              Check again
+            </button>
             <button type="button" className="btn btn-quiet" onClick={() => setStage({ name: "idle" })}>
               Done
             </button>
@@ -402,7 +465,14 @@ function Review({
         <legend>Fee speed</legend>
         {SPEEDS.map((s) => (
           <label key={s.id} className="speed">
-            <input type="radio" name="speed" checked={speed === s.id} onChange={() => setSpeed(s.id)} />
+            <input
+              type="radio"
+              name="speed"
+              checked={speed === s.id}
+              onChange={() => setSpeed(s.id)}
+              // The wallet is signing one exact fee; changing speed now would show a different one.
+              disabled={stage.name === "signing"}
+            />
             <span>
               {s.label}
               <small>{formatRate(effectiveRate(fees[s.id]))}</small>

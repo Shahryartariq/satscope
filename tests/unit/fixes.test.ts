@@ -161,6 +161,11 @@ describe("planMerge", () => {
 
   it("needs at least three coins and an index answer", () => {
     expect(planMerge({ coins: coins.slice(0, 2), address: PAY, feeRate: 2, indexed: true }).ok).toBe(false);
+    // A broken fee feed must never turn into a fix that burns the coins in fees.
+    const crazy = planMerge({ coins, address: PAY, feeRate: 5000, indexed: true });
+    expect(crazy.ok).toBe(false);
+    if (!crazy.ok) expect(crazy.reason).toMatch(/Fee rates look wrong/);
+    expect(planMerge({ coins, address: PAY, feeRate: Number.NaN, indexed: true }).ok).toBe(false);
     expect(planMerge({ coins, address: PAY, feeRate: 2, indexed: false }).ok).toBe(false);
   });
 });

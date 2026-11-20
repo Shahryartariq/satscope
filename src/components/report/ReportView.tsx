@@ -99,15 +99,22 @@ export function ReportView({ report }: { report: Report }) {
       <div className="wrap report-body">
         {!report.indexed ? (
           <p className="notice" role="status">
-            Ordinals and Runes weren&apos;t checked for {multi ? "every address" : "this address"} because the Ordinals
-            index didn&apos;t answer. The bitcoin figures are complete; treat small coins with care until you can check
-            again.
+            Ordinals and Runes weren&apos;t fully checked for {multi ? "every address" : "this address"}: the Ordinals
+            index didn&apos;t answer, or the address holds more inscriptions or Runes than Satscope reads. The bitcoin
+            figures are complete. Treat small coins with care, and fixes stay off until a full check.
           </p>
         ) : null}
 
         <div className="summary-grid">
           <section className="panel" aria-label="Health score">
-            {report.scored ? (
+            {report.scored && report.coins.length === 0 ? (
+              <div className="score unscored">
+                <h2 className="score-verdict">Nothing to score</h2>
+                <p className="muted">
+                  This address holds no coins right now, so nothing in it is at risk. A score needs at least one coin.
+                </p>
+              </div>
+            ) : report.scored ? (
               <ScoreDial score={report.score} grade={report.grade} />
             ) : (
               <div className="score unscored">
@@ -213,7 +220,10 @@ export function ReportView({ report }: { report: Report }) {
               value: c.value,
               address: c.address,
               kind: c.kind,
-              confirmed: c.confirmed,
+              // Fixes only touch coins with 2+ confirmations: the Ordinals index can lag
+              // a block behind, and a coin it hasn't seen yet would look like plain bitcoin.
+              confirmed:
+                c.confirmed && market.tipHeight != null && c.height != null && market.tipHeight - c.height >= 1,
               inscriptions: c.inscriptions.length,
               runes: c.runes.map((r) => r.name),
             }))}

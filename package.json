@@ -46,6 +46,9 @@
   },
   "overrides": {
     "alkanes": "file:./vendor/empty-module",
-    "@oyl/sdk": "file:./vendor/empty-module"
+    "@oyl/sdk": "file:./vendor/empty-module",
+    "@sats-connect/core": {
+      "axios": "^1.21.0"
+    }
   }
 }

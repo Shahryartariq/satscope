@@ -12,6 +12,31 @@ export class UpstreamError extends Error {
 }
 
 const USER_AGENT = "Satscope/1.0 (+https://satscope.vercel.app)";
+/** No API answer Satscope uses comes near this; a bigger one is a fault, not data. */
+export const MAX_RESPONSE_BYTES = 5_000_000;
+
+async function readText(res: Response, url: string): Promise<string> {
+  const declared = Number(res.headers.get("content-length") ?? 0);
+  if (declared > MAX_RESPONSE_BYTES) {
+    await res.body?.cancel().catch(() => {});
+    throw new UpstreamError(`${new URL(url).host} sent too much data`, res.status);
+  }
+  const reader = res.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_RESPONSE_BYTES) {
+      await reader.cancel().catch(() => {});
+      throw new UpstreamError(`${new URL(url).host} sent too much data`, res.status);
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
+}
 
 export async function fetchText(url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<string> {
   const { timeoutMs = 8000, headers, ...rest } = init;
@@ -21,7 +46,7 @@ export async function fetchText(url: string, init: RequestInit & { timeoutMs?: n
     signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
-  const text = await res.text();
+  const text = await readText(res, url);
   if (!res.ok) throw new UpstreamError(`${new URL(url).host} answered ${res.status}`, res.status, text.slice(0, 200));
   return text;
 }

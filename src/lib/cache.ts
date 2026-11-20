@@ -9,10 +9,20 @@ import { getCache } from "@vercel/functions";
 const cache = getCache({ namespace: "satscope-v1" });
 const inflight = new Map<string, Promise<unknown>>();
 
-export async function cached<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T> {
+/**
+ * `accept` can turn down a cached value that no longer fits the caller (for
+ * example, Ordinals data that predates coins the address has now), forcing a
+ * fresh load that replaces it.
+ */
+export async function cached<T>(
+  key: string,
+  ttlSeconds: number,
+  load: () => Promise<T>,
+  accept?: (value: T) => boolean,
+): Promise<T> {
   try {
     const hit = (await cache.get(key)) as { v: T } | null;
-    if (hit && typeof hit === "object" && "v" in hit) return hit.v;
+    if (hit && typeof hit === "object" && "v" in hit && (!accept || accept(hit.v))) return hit.v;
   } catch {
     // A cache outage should never take the site down.
   }

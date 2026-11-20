@@ -53,10 +53,10 @@ export function hasUnisatKey(): boolean {
   return Boolean(process.env.UNISAT_API_KEY);
 }
 
-async function call<T>(path: string): Promise<T> {
+async function call<T>(path: string, visitor?: string): Promise<T> {
   const key = process.env.UNISAT_API_KEY;
   if (!key) throw new UpstreamError("UniSat API key not set");
-  if (!spendUnits(1)) throw new UpstreamError("Daily UniSat budget used up");
+  if (!spendUnits(1, visitor)) throw new UpstreamError("Daily UniSat budget used up");
   const body = await fetchJson<Envelope<T>>(`${BASE}${path}`, {
     headers: { Authorization: `Bearer ${key}` },
     timeoutMs: 10_000,
@@ -76,33 +76,51 @@ export function mapRune(r: UnisatRuneBalance): RuneAmount {
 }
 
 export function mapInscriptions(u: UnisatInscriptionUtxo): InscriptionRef[] {
-  return (u.inscriptions ?? []).map((i) => ({ id: i.inscriptionId, number: i.inscriptionNumber }));
+  // Ids end up in ordinals.com URLs in the browser, so only well-formed ones are kept.
+  return (u.inscriptions ?? [])
+    .filter((i) => VALID_INSCRIPTION_ID.test(i.inscriptionId))
+    .map((i) => ({ id: i.inscriptionId, number: i.inscriptionNumber }));
 }
 
-async function inscriptionUtxos(address: string): Promise<UnisatInscriptionUtxo[]> {
+/** A list from UniSat, and whether it holds every entry or was cut off at our page limit. */
+interface Listing<T> {
+  items: T[];
+  complete: boolean;
+}
+
+const VALID_INSCRIPTION_ID = /^[0-9a-f]{64}i\d+$/;
+
+async function inscriptionUtxos(address: string, visitor?: string): Promise<Listing<UnisatInscriptionUtxo>> {
   const all: UnisatInscriptionUtxo[] = [];
+  let total = 0;
   for (let page = 0; page < MAX_PAGES; page++) {
     const data = await call<{ total: number; utxo: UnisatInscriptionUtxo[] }>(
       `/v1/indexer/address/${address}/inscription-utxo-data?cursor=${page * PAGE}&size=${PAGE}`,
+      visitor,
     );
+    total = data.total ?? 0;
     all.push(...(data.utxo ?? []));
-    if (all.length >= data.total || (data.utxo ?? []).length < PAGE) break;
+    if (all.length >= total || (data.utxo ?? []).length < PAGE) break;
   }
-  return all;
+  return { items: all, complete: all.length >= total };
 }
 
-async function runeBalances(address: string): Promise<UnisatRuneBalance[]> {
+async function runeBalances(address: string, visitor?: string): Promise<Listing<UnisatRuneBalance>> {
   const data = await call<{ total: number; detail: UnisatRuneBalance[] }>(
     `/v1/indexer/address/${address}/runes/balance-list?start=0&limit=${PAGE}`,
+    visitor,
   );
-  return data.detail ?? [];
+  const items = data.detail ?? [];
+  return { items, complete: items.length >= (data.total ?? 0) };
 }
 
-async function runeUtxos(address: string, runeId: string): Promise<UnisatRuneUtxo[]> {
+async function runeUtxos(address: string, runeId: string, visitor?: string): Promise<Listing<UnisatRuneUtxo>> {
   const data = await call<{ total: number; utxo: UnisatRuneUtxo[] }>(
     `/v1/indexer/address/${address}/runes/${encodeURIComponent(runeId)}/utxo?start=0&limit=${PAGE}`,
+    visitor,
   );
-  return data.utxo ?? [];
+  const items = data.utxo ?? [];
+  return { items, complete: items.length >= (data.total ?? 0) };
 }
 
 export interface OrdinalsOverlay {
@@ -111,12 +129,22 @@ export interface OrdinalsOverlay {
   /** outpoint → runes */
   runes: Record<string, RuneAmount[]>;
   balances: RuneBalance[];
+  /**
+   * False when a list was cut off (over 500 inscription coins, over 12 kinds of
+   * Runes, or over 100 coins of one Rune). Coins missing from a cut-off list
+   * would look like plain bitcoin, so the address must not count as checked.
+   */
+  complete: boolean;
+  /** Outpoints the address held when this data was fetched. Newer coins aren't covered by it. */
+  seen: string[];
 }
 
 export function buildOverlay(
   insUtxos: UnisatInscriptionUtxo[],
   balances: UnisatRuneBalance[],
   runeUtxoLists: UnisatRuneUtxo[][],
+  complete = true,
+  seen: string[] = [],
 ): OrdinalsOverlay {
   const inscriptions: Record<string, InscriptionRef[]> = {};
   for (const u of insUtxos) {
@@ -132,14 +160,43 @@ export function buildOverlay(
       runes[key] = existing;
     }
   }
-  return { inscriptions, runes, balances: balances.map(mapRune) };
+  return { inscriptions, runes, balances: balances.map(mapRune), complete, seen };
 }
 
-/** Inscriptions and Runes per coin for one address. Cached for 10 minutes. */
-export async function getOrdinalsOverlay(address: string): Promise<OrdinalsOverlay> {
-  return cached(`ord:${address}`, 600, async () => {
-    const [ins, balances] = await Promise.all([inscriptionUtxos(address), runeBalances(address)]);
-    const lists = await Promise.all(balances.slice(0, MAX_RUNES_PER_ADDRESS).map((b) => runeUtxos(address, b.runeid)));
-    return buildOverlay(ins, balances, lists);
-  });
+/**
+ * Inscriptions and Runes per coin for one address, cached for 10 minutes.
+ * `outpoints` are the coins the address holds now: if any of them is newer than
+ * the cached data, the data is fetched again, so a coin that just arrived is
+ * never reported as plain bitcoin because of a stale cache.
+ */
+export async function getOrdinalsOverlay(
+  address: string,
+  outpoints: string[],
+  visitor?: string,
+): Promise<OrdinalsOverlay> {
+  return cached(
+    `ord2:${address}`,
+    600,
+    async () => {
+      const [ins, balances] = await Promise.all([inscriptionUtxos(address, visitor), runeBalances(address, visitor)]);
+      const kinds = balances.items.slice(0, MAX_RUNES_PER_ADDRESS);
+      const lists = await Promise.all(kinds.map((b) => runeUtxos(address, b.runeid, visitor)));
+      const complete =
+        ins.complete &&
+        balances.complete &&
+        balances.items.length <= MAX_RUNES_PER_ADDRESS &&
+        lists.every((l) => l.complete);
+      return buildOverlay(
+        ins.items,
+        balances.items,
+        lists.map((l) => l.items),
+        complete,
+        outpoints,
+      );
+    },
+    (hit) => {
+      const seen = new Set(hit.seen ?? []);
+      return outpoints.every((o) => seen.has(o));
+    },
+  );
 }

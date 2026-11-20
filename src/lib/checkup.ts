@@ -31,7 +31,7 @@ export async function getMarket(): Promise<MarketData> {
   return { fees, usd, tipHeight };
 }
 
-async function snapshot(target: Target): Promise<AddressSnapshot> {
+async function snapshot(target: Target, visitor?: string): Promise<AddressSnapshot> {
   const type = parseAddress(target.address);
   if (!type) throw new CheckupError(`"${target.address}" is not a valid Bitcoin address`, "invalid");
 
@@ -70,13 +70,18 @@ async function snapshot(target: Target): Promise<AddressSnapshot> {
   let runeBalances: AddressSnapshot["runeBalances"] = [];
   if (hasUnisatKey() && !tooManyCoins && coins.length > 0) {
     try {
-      const overlay = await getOrdinalsOverlay(target.address);
+      const overlay = await getOrdinalsOverlay(
+        target.address,
+        coins.map((c) => `${c.txid}:${c.vout}`),
+        visitor,
+      );
       coins = coins.map((c) => {
         const key = `${c.txid}:${c.vout}`;
         return { ...c, inscriptions: overlay.inscriptions[key] ?? [], runes: overlay.runes[key] ?? [] };
       });
       runeBalances = overlay.balances;
-      indexed = true;
+      // A cut-off list means some coins weren't checked: treat the address as not indexed.
+      indexed = overlay.complete;
     } catch {
       indexed = false;
     }
@@ -99,12 +104,13 @@ export function parseTargets(input: { address?: string; ordinals?: string; payme
   return out;
 }
 
-export async function runCheckup(targets: Target[]): Promise<Report> {
+/** `visitor` is charged for the UniSat calls this checkup makes (cached data is free). */
+export async function runCheckup(targets: Target[], visitor?: string): Promise<Report> {
   if (targets.length === 0) throw new CheckupError("Enter a Bitcoin address to check.", "invalid");
   for (const t of targets) {
     if (!parseAddress(t.address))
       throw new CheckupError(`"${t.address}" is not a valid Bitcoin mainnet address.`, "invalid");
   }
-  const [snaps, market] = await Promise.all([Promise.all(targets.map(snapshot)), getMarket()]);
+  const [snaps, market] = await Promise.all([Promise.all(targets.map((t) => snapshot(t, visitor))), getMarket()]);
   return buildReport(snaps, market);
 }

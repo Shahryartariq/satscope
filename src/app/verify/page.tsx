@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { CopyButton } from "@/components/CopyButton";
 import { ADDRESS_TYPE_LABEL, normalizeAddress, parseAddress } from "@/lib/address";
@@ -13,13 +14,14 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const sp = await searchParams;
   const shared = Boolean(one(sp.p) || one(sp.s));
-  return {
+  const meta = pageMetadata({
     title: shared ? "Bitcoin ownership proof" : "Verify a Bitcoin message signature",
     description:
       "Check a Bitcoin signed message: BIP-322 from Xverse, UniSat or Leather, and classic signatures from Electrum, Sparrow or Bitcoin Core.",
-    alternates: { canonical: "/verify" },
-    robots: shared ? { index: false, follow: false } : undefined,
-  };
+    path: "/verify",
+  });
+  // A shared proof link is someone's address: never in search results, links not followed.
+  return shared ? { ...meta, robots: { index: false, follow: false } } : meta;
 }
 
 export default async function VerifyPage({ searchParams }: Props) {
@@ -46,7 +48,9 @@ export default async function VerifyPage({ searchParams }: Props) {
       <p className="crumbs">
         <Link href="/">Satscope</Link> / Verify a signature
       </p>
-      <h1>{proof ? "Ownership proof" : "Verify a Bitcoin message signature"}</h1>
+      {/* Only Satscope's own message format is called a proof. Any other signed text could have been
+          made for a different site and wrapped in a link, so it is shown in full as a plain signed message. */}
+      <h1>{proof ? (meta ? "Ownership proof" : "Signed message") : "Verify a Bitcoin message signature"}</h1>
 
       {proof && result ? (
         <div className="panel verify-result" role="status">
@@ -92,13 +96,23 @@ export default async function VerifyPage({ searchParams }: Props) {
             {meta?.signedAt ? (
               <div>
                 <dt>Signed</dt>
-                <dd>{meta.signedAt.toUTCString()}</dd>
+                <dd>
+                  {meta.signedAt.toUTCString()} ({age(meta.signedAt)})
+                </dd>
+              </div>
+            ) : null}
+            {!meta ? (
+              <div>
+                <dt>Message</dt>
+                <dd>
+                  <pre className="sig-block">{proof.message}</pre>
+                </dd>
               </div>
             ) : null}
           </dl>
           <details>
-            <summary>Show the signed message and signature</summary>
-            <pre className="sig-block">{proof.message}</pre>
+            <summary>{meta ? "Show the signed message and signature" : "Show the signature"}</summary>
+            {meta ? <pre className="sig-block">{proof.message}</pre> : null}
             <pre className="sig-block">{proof.signature}</pre>
           </details>
           {result.ok ? (
@@ -171,4 +185,11 @@ export default async function VerifyPage({ searchParams }: Props) {
       </form>
     </section>
   );
+}
+
+/** "today", "1 day ago", "40 days ago": an old proof says less about who holds the keys now. */
+function age(signedAt: Date): string {
+  const days = Math.floor((Date.now() - signedAt.getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  return days === 1 ? "1 day ago" : `${days.toLocaleString("en-US")} days ago`;
 }

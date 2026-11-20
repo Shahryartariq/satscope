@@ -61,7 +61,14 @@ describe("esplora mapping", () => {
 describe("UniSat overlay", () => {
   it("indexes inscriptions and runes by outpoint", () => {
     const o = buildOverlay(
-      [{ txid: "aa", vout: 0, satoshi: 546, inscriptions: [{ inscriptionId: "aai0", inscriptionNumber: 7 }] }],
+      [
+        {
+          txid: "aa",
+          vout: 0,
+          satoshi: 546,
+          inscriptions: [{ inscriptionId: `${"a".repeat(64)}i0`, inscriptionNumber: 7 }],
+        },
+      ],
       [
         {
           amount: "100",
@@ -110,7 +117,7 @@ describe("UniSat overlay", () => {
         ],
       ],
     );
-    expect(o.inscriptions["aa:0"]).toEqual([{ id: "aai0", number: 7 }]);
+    expect(o.inscriptions["aa:0"]).toEqual([{ id: `${"a".repeat(64)}i0`, number: 7 }]);
     expect(o.runes["bb:1"]).toHaveLength(1);
     expect(o.runes["bb:1"]![0]!.name).toBe("DOG•GO•TO•THE•MOON");
     expect(o.balances[0]!.id).toBe("840000:3");
@@ -122,9 +129,20 @@ describe("budgets", () => {
     resetBudgetsForTests();
     const t = Date.now();
     let ok = 0;
-    while (spendUnits(1, t)) ok++;
+    while (spendUnits(1, undefined, t)) ok++;
     expect(ok).toBe(900);
-    expect(spendUnits(1, t + 86_400_001)).toBe(true);
+    expect(spendUnits(1, undefined, t + 86_400_001)).toBe(true);
+  });
+
+  it("gives each visitor only a share of the daily budget", () => {
+    resetBudgetsForTests();
+    const t = Date.now();
+    let ok = 0;
+    while (spendUnits(1, "greedy", t)) ok++;
+    expect(ok).toBe(150);
+    // Everyone else still gets index data.
+    expect(spendUnits(1, "someone-else", t)).toBe(true);
+    expect(spendUnits(1, "greedy", t + 86_400_001)).toBe(true);
   });
 
   it("limits one visitor per window", () => {
@@ -134,5 +152,29 @@ describe("budgets", () => {
     expect(allowVisitor("ip", t, 3, 1000)).toBe(false);
     expect(allowVisitor("other", t, 3, 1000)).toBe(true);
     expect(allowVisitor("ip", t + 1001, 3, 1000)).toBe(true);
+  });
+});
+
+describe("Ordinals overlay", () => {
+  it("records whether the lists were complete and which coins they cover", () => {
+    const o = buildOverlay([], [], [], false, ["a:0"]);
+    expect(o.complete).toBe(false);
+    expect(o.seen).toEqual(["a:0"]);
+  });
+
+  it("drops malformed inscription ids before they reach a URL", () => {
+    const o = buildOverlay(
+      [
+        {
+          txid: "t",
+          vout: 0,
+          satoshi: 546,
+          inscriptions: [{ inscriptionId: "../../evil" }, { inscriptionId: "a".repeat(64) + "i0" }],
+        },
+      ],
+      [],
+      [],
+    );
+    expect(o.inscriptions["t:0"]?.map((i) => i.id)).toEqual(["a".repeat(64) + "i0"]);
   });
 });

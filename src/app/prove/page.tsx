@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { ProveFlow } from "@/components/ProveFlow";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Prove you own a Bitcoin address",
   description:
     "Sign a message with Xverse, UniSat, Leather or another Bitcoin wallet and get a link that proves you control the address. Free, no transaction, BIP-322.",
-  alternates: { canonical: "/prove" },
-};
+  path: "/prove",
+});
 
 export default function ProvePage() {
   return (

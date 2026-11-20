@@ -108,8 +108,8 @@ export function ProveFlow() {
                 onChange={(e) => setNote(e.target.value)}
               />
               <p className="muted small-note">
-                The note and today&apos;s date are part of the signed message, so the proof can&apos;t be reused for
-                something else.
+                The note and today&apos;s date are signed too, so nobody can change them or pass the proof off as newer.
+                Anyone you share the link with can show it again later, so say who it&apos;s for in the note.
               </p>
             </div>
             <div className="actions-row">
